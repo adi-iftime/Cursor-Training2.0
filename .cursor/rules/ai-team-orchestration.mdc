@@ -1,0 +1,24 @@
+---
+description: Lean multi-agent planning, parallel Task execution, PR summary and review per AGENTS.md
+alwaysApply: true
+---
+
+# AI team orchestration
+
+For **multi-step or multi-area work**, follow the full playbook in [`AGENTS.md`](../../AGENTS.md) at the repository root.
+
+## Non-negotiables
+
+1. **Plan first** — Output `PLAN:` lines: one agent per task, explicit `[depends on …]` or `[no dependencies]`.
+2. **Orchestrate** — Group into `PARALLEL:` (no unmet deps) vs `SEQUENTIAL:`; do not run independent work one-by-one if subagents can run together.
+3. **Execute** — One assigned task per **`Task` tool** subagent; minimal diffs; no unrelated file edits.
+4. **Close** — **pr-writer**: what changed, how to test. **reviewer**: issues and improvements.
+
+## Cursor execution
+
+- **Parallel** = multiple `Task` invocations **in the same turn** when tasks are independent.
+- **Sequential** = after dependency results are available, spawn the next `Task`(s).
+
+## When to skip ceremony
+
+Single obvious change → still keep diffs small and accurate; full planner/orchestrator loop optional.
