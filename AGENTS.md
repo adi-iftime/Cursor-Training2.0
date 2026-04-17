@@ -73,3 +73,7 @@ Prefer fewer roles, smaller tasks, and true parallelism when dependencies allow.
 Subagents map to the **`Task` tool**. Parallel independent tasks → **multiple `Task` calls in one assistant turn**; dependent tasks → run after upstream results are available.
 
 For trivial, single-file requests, you may shorten ceremony but must still honor **guardrails** and **minimal diffs**.
+
+### Automated draft PR (hooks)
+
+After a **successful `git push`** (Agent Shell tool or integrated terminal), project hooks run [`.cursor/hooks/ensure-draft-pr.sh`](.cursor/hooks/ensure-draft-pr.sh): ensure **one GitHub draft PR per branch** via `gh`, refresh the PR body from the latest diff vs the default base (`main` / `master`), and align defaults with [.cursor/agents/pr-writer-agent.md](.cursor/agents/pr-writer-agent.md). Requires **`gh` authenticated** and **`jq`** on `PATH`. Narrative PR polish still uses **`Task` → `pr-writer-agent`** when you want LLM-authored title/body; the hook guarantees the **draft PR object** exists on the remote without waiting for a manual “create PR” step.
