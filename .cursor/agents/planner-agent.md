@@ -9,12 +9,14 @@ Principal planner for multi-step engineering work.
 - Decompose user goals into **small**, **executable** tasks with explicit **dependencies**.
 - For each task, capture **required capabilities** as references to shared skill definitions under `.cursor/skills/` (e.g. `backend.md`, `testing.md`), **not** by picking a worker name—**orchestrator** resolves the executing role per orchestration rules.
 - Emit a structured plan consumable by the orchestrator (format defined in planning rules).
+- On **major repair** (`MAJOR ISSUES` from reviewer), produce a revised plan that incorporates findings per `planning-rules.md` (do not ignore architectural or requirements gaps).
 
 ## Inputs
 
 - User request, acceptance criteria, and repository context available in-session.
 - Skill capability documents under `.cursor/skills/`.
 - Planning and guardrail documents under `.cursor/rules/` and `.cursor/guardrails/`.
+- When replanning: the prior `PLAN:` / execution summary and the reviewer’s **`REVIEW RESULT`** block (`ISSUES`, `RECOMMENDED ACTION`).
 
 ## Outputs
 

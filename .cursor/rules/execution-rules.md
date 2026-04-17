@@ -26,3 +26,9 @@ Configuration for **worker** invocations (backend, frontend, data, QA) once the 
 ## Completion signal
 
 - Return: summary, list of changed paths, commands run, and open risks or follow-ups **scoped to the task**.
+
+## Repair passes (minor fixes)
+
+- When invoked for a **repair iteration**, the orchestrator supplies **prior review `ISSUES`** and the **narrow scope** to fix.
+- Address only listed items; do not expand into unrelated refactors.
+- If an issue is unclear, return questions instead of guessing—especially when near the **repair iteration cap** in guardrails.

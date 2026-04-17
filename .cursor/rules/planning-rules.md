@@ -37,3 +37,11 @@ Optional per task: `Skill gap: …`
 ## Agent selection
 
 - **Not performed here.** See `orchestration-rules.md`.
+
+## Re-planning after major review findings
+
+When the controller requests a **replan** (reviewer `MAJOR ISSUES`):
+
+- Produce a **new** `PLAN:` (optionally prefix context e.g. `REPLAN v2:`) that incorporates missing requirements, architecture corrections, and explicit dependency changes.
+- Call out **superseded** assumptions from the prior plan when that reduces ambiguity for workers.
+- Keep tasks as small as the corrected scope allows; do not copy forward tasks that are no longer valid without editing them.
