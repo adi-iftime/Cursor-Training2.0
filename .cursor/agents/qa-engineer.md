@@ -1,3 +1,11 @@
+---
+name: qa-engineer
+description: Automated tests, fixtures, and quality evidence for assigned tasks.
+type: agent
+skills:
+  - testing
+---
+
 # qa-engineer
 
 ## Role

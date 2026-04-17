@@ -1,3 +1,10 @@
+---
+name: backend
+description: Backend services, HTTP APIs, layering, and server-side practices.
+type: skill
+domain: backend
+---
+
 # Skill: Backend
 
 Reusable capability definition. **Not** tied to any single agent; routing is defined in orchestration rules.

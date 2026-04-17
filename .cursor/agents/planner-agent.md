@@ -1,3 +1,10 @@
+---
+name: planner-agent
+description: Decomposes work into skill-tagged tasks and dependency-aware plans.
+type: agent
+skills: []
+---
+
 # planner-agent
 
 ## Role

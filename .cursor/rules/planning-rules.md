@@ -1,3 +1,10 @@
+---
+name: planning-rules
+description: Task splitting, skills-first plans, dependencies, and replanning policy.
+type: rule
+applies_to: planner
+---
+
 # Planning rules
 
 Configuration for **planner-agent** behavior. Agent personas live in `.cursor/agents/`; capabilities live in `.cursor/skills/`.

@@ -1,3 +1,10 @@
+---
+name: pr-writer-agent
+description: Feature-key PR orchestration, draft defaults, titles, and descriptions.
+type: agent
+skills: []
+---
+
 # pr-writer-agent
 
 ## Role

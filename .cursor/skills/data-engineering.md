@@ -1,3 +1,10 @@
+---
+name: data-engineering
+description: Pipelines, SQL, batch or stream processing, and warehouse-oriented data work.
+type: skill
+domain: data
+---
+
 # Skill: Data engineering
 
 Reusable capability definition. **Not** tied to any single agent; routing is defined in orchestration rules.

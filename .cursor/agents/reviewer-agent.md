@@ -1,3 +1,10 @@
+---
+name: reviewer-agent
+description: Code review gate with APPROVED, MINOR FIXES, or MAJOR ISSUES routing.
+type: agent
+skills: []
+---
+
 # reviewer-agent
 
 ## Role

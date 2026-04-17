@@ -1,3 +1,11 @@
+---
+name: backend-developer
+description: Server-side APIs, services, and persistence for assigned tasks.
+type: agent
+skills:
+  - backend
+---
+
 # backend-developer
 
 ## Role

@@ -1,3 +1,10 @@
+---
+name: orchestrator-agent
+description: Turns plans into parallel or sequential execution and role assignment.
+type: agent
+skills: []
+---
+
 # orchestrator-agent
 
 ## Role

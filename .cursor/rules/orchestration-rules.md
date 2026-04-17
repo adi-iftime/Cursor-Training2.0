@@ -1,3 +1,10 @@
+---
+name: orchestration-rules
+description: Parallelism, role routing, security gate order, and repair loops.
+type: rule
+applies_to: orchestrator
+---
+
 # Orchestration rules
 
 Configuration for **orchestrator-agent** behavior: ordering, parallelism, and **dynamic agent selection**.

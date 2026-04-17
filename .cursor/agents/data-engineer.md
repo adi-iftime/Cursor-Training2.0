@@ -1,3 +1,11 @@
+---
+name: data-engineer
+description: Data pipelines, transforms, SQL, and analytical preparation for assigned tasks.
+type: agent
+skills:
+  - data-engineering
+---
+
 # data-engineer
 
 ## Role
