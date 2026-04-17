@@ -10,6 +10,19 @@
 - **Discover** whether an open PR already represents the **same** feature (see **PR matching**).
 - **Choose action:** same `featureKey` / same feature slice → **update** existing PR (append-only, same branch); otherwise → **new** branch + **new** PR.
 - Produce **PR title**, **description**, and **suggested commits** per rules below—no external IDs or ticket references.
+- Apply **Draft PR default** (see below) for every **create**; preserve draft/ready state on **update** unless explicitly instructed otherwise.
+
+---
+
+## Draft PR default (core behavior)
+
+- **All newly created PRs** are **Draft** by default (e.g. GitHub: `gh pr create --draft`; GitLab/Git providers: equivalent draft/WIP flag per platform).
+- **Ready for review** (non-draft / “mark ready”) **only** when the user or orchestrator **explicitly** requests it, e.g. phrasing such as:
+  - `ready for review`
+  - `final PR`
+  - `publish PR`
+  - or a clear equivalent (`mark PR ready`, `open for review`, `undraft`).
+- If the request is **ambiguous** about readiness → keep or create as **Draft**; **do not** assume review-ready and **do not** promote to satisfy ambiguity.
 
 ---
 
@@ -44,7 +57,7 @@ When searching for an existing open PR, match **only** using:
 | **SECONDARY** | **Same branch name** as current head (reuse PR on that branch). |
 | **FALLBACK** | **Strong semantic similarity** only—same narrow scope and same paths; use **conservatively**. |
 
-If **no** match → **create** a new PR (new branch per **Branch rule**).
+If **no** match → **create** a new PR (new branch per **Branch rule**). New PRs are **always created as Draft** unless an **explicit** “ready / publish / final” instruction applies (see **Draft PR default**).
 
 If **multiple** PRs match → select the **most recently updated**; state which PR was chosen in **Outputs**.
 
@@ -69,6 +82,7 @@ When **updating** an existing PR:
 - **Never** reset or regenerate full history in a way that drops prior review context.
 - **Preserve** `featureKey` and branch linkage.
 - **Never** split the **same** feature into multiple PRs intentionally—one cohesive PR per `featureKey` unless scope genuinely diverges (then new `featureKey` → new PR).
+- **Preserve** the PR’s **draft vs ready-for-review** state: **do not** change it during a normal content update (append-only). **Draft ↔ Ready** transitions **only** when the user or orchestrator gives an **explicit** instruction (same phrases as in **Draft PR default**).
 
 **Append format:**
 
@@ -113,6 +127,14 @@ Prepend a one-line **Update** note if useful (timestamp or push summary).
 
 - **No** prefixes, **no** external IDs, **no** ticket references.
 - Plain, readable summary of what the PR does.
+
+---
+
+## PR creation behavior (lifecycle)
+
+- **Implicit default state for every new PR:** **DRAFT**—treat as non-negotiable unless overridden by explicit readiness language (**Draft PR default**).
+- When emitting CLI steps, **include** `--draft` (or provider equivalent) for **create** unless the instruction set explicitly requests a published/ready PR.
+- **Only** omit draft / mark ready when the controller explicitly uses one of the allowed override phrases—never by assumption.
 
 ---
 
@@ -174,6 +196,7 @@ When multiple agents touch the **same** feature:
 3. **Final PR title** + **full description** (including append sections if update).
 4. **Branch name** used or recommended.
 5. **Suggested commit message(s)** (Conventional Commits, no external IDs).
+6. **PR lifecycle:** state **`DRAFT (default)`** vs **`READY FOR REVIEW (explicit only)`** and the implied action (e.g. `gh pr create --draft` vs mark ready)—on **update**, state **preserved** draft/ready unless an explicit transition was requested.
 
 ## Constraints
 
@@ -181,6 +204,7 @@ When multiple agents touch the **same** feature:
 - **Never** mention Jira, tickets, or external issue keys; **never** assume a tracking system exists.
 - **Never** dual-mode or hybrid logic—**one** feature-based system only.
 - **Never** add metadata outside **branch + featureKey + PR content** as defined here.
+- **Default new PRs to Draft**; never mark ready without explicit instruction (**Draft PR default**).
 - When GitHub CLI is unavailable, still emit **exact** title/body text for manual paste.
 
 ## Forbidden behavior
@@ -189,3 +213,7 @@ When multiple agents touch the **same** feature:
 - **Dual-mode**, fallback ticket modes, or inferred IDs.
 - **Ticket linking**, `[KEY]` prefixes, or “story” language tied to external trackers.
 - Splitting the same feature across multiple PRs without a **new** `featureKey` and justified scope split.
+- **Creating a non-draft / “ready for review” PR** unless the user or orchestrator **explicitly** requested it (see **Draft PR default**).
+- **Auto-promoting** Draft → Ready, or assuming the change is review-ready from completeness, silence, or ambiguous input.
+- **Changing** draft/ready state on **update** without an **explicit** instruction to do so.
+- **Prompting for confirmation** of readiness when input is ambiguous—**default remains Draft** without extra confirmation steps unless the project explicitly requires them elsewhere.
