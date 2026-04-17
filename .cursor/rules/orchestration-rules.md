@@ -47,3 +47,40 @@ PARALLEL:
 SEQUENTIAL:
 - Task B → Assigned agent: …
 ```
+
+---
+
+## Self-healing loop (post-review)
+
+The workflow is a **closed loop**, not strictly linear: **Planner → Orchestrator → Workers → PR → Reviewer → (repair)**.
+
+### Reviewer routing (input to orchestrator)
+
+The reviewer emits the mandatory block defined in `.cursor/agents/reviewer-agent.md`:
+
+- `APPROVED` → orchestrator takes **no** further dispatch action for that feature slice.
+- `MINOR FIXES` → **Case A** (below).
+- `MAJOR ISSUES` → **Case B** (below).
+
+Respect **repair iteration limits** in `.cursor/guardrails/guardrails.md`.
+
+### Case A — Minor fixes
+
+- **Do not** invoke planner again for the same feature unless guardrails say otherwise.
+- Build a **delta execution plan**: only tasks/workers implicated by `ISSUES` and `RECOMMENDED ACTION`.
+- Re-dispatch **only** those workers via **`Task`**, in parallel when their dependencies are satisfied.
+- **Preserve** outputs from tasks not listed for redo (do not re-run unchanged lanes).
+
+### Case B — Major issues
+
+- **Re-run planner** to produce a revised `PLAN:` that incorporates reviewer findings and missing requirements.
+- **Re-orchestrate** from the new plan (full or partial tree per planner output).
+- **Jira:** when a Jira issue exists and Atlassian MCP is available, **update** the story (description, AC, or comment) to reflect the replan—do not silently diverge from the ticket.
+- Then dispatch workers per the new execution plan.
+
+### Re-execution mode (orchestrator)
+
+- Accept **corrected tasks** or a **subset plan** from the system controller.
+- Maintain a **preserve list** (tasks/files OK as-is) vs **redo list** (must re-execute).
+- Support **parallel** re-dispatch for independent redo tasks.
+- After each repair pass, route back to **pr-writer** (if needed) and **reviewer** until `APPROVED` or iteration cap.

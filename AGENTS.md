@@ -15,15 +15,36 @@ This repository uses a **modular, configuration-first** playbook. **Agents** des
 
 **Routing:** required skills are declared in planning output; **orchestrator** assigns workers using [.cursor/rules/orchestration-rules.md](.cursor/rules/orchestration-rules.md) (single place to extend skill→role defaults).
 
+**Self-healing:** review can route to **targeted worker re-runs** (minor) or **replanner + full orchestration** (major), with iteration caps in [.cursor/guardrails/guardrails.md](.cursor/guardrails/guardrails.md).
+
 ---
 
-## Workflow (five steps)
+## Control loop (not strictly linear)
+
+```mermaid
+flowchart LR
+  plannerNode[Planner]
+  orchNode[Orchestrator]
+  workersNode[Workers]
+  prNode[PR_writer]
+  revNode[Reviewer]
+  plannerNode --> orchNode --> workersNode --> prNode --> revNode
+  revNode -->|"MINOR_FIXES"| workersNode
+  revNode -->|"MAJOR_ISSUES"| plannerNode
+  revNode -->|"APPROVED"| endNode[End]
+```
+
+Details: [.cursor/rules/orchestration-rules.md](.cursor/rules/orchestration-rules.md) (repair cases), [.cursor/agents/reviewer-agent.md](.cursor/agents/reviewer-agent.md) (mandatory `REVIEW RESULT` format).
+
+---
+
+## Workflow (primary path)
 
 1. **Planning** — Follow [.cursor/rules/planning-rules.md](.cursor/rules/planning-rules.md) and [.cursor/agents/planner-agent.md](.cursor/agents/planner-agent.md). Output `PLAN:` with **required skills** and dependencies.
 2. **Orchestration** — Follow [.cursor/rules/orchestration-rules.md](.cursor/rules/orchestration-rules.md) and [.cursor/agents/orchestrator-agent.md](.cursor/agents/orchestrator-agent.md). Add `Assigned agent:` per task; emit `PARALLEL:` / `SEQUENTIAL:`.
 3. **Execution** — Workers per [.cursor/agents/](.cursor/agents/) and [.cursor/rules/execution-rules.md](.cursor/rules/execution-rules.md).
 4. **PR writing** — [.cursor/agents/pr-writer-agent.md](.cursor/agents/pr-writer-agent.md).
-5. **Review** — [.cursor/agents/reviewer-agent.md](.cursor/agents/reviewer-agent.md).
+5. **Review** — [.cursor/agents/reviewer-agent.md](.cursor/agents/reviewer-agent.md) → then **repair loop** or **end** per review status and guardrails.
 
 ---
 

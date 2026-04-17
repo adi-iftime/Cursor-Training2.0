@@ -1,5 +1,5 @@
 ---
-description: Modular AI team — agents/skills/rules/guardrails; skill-first plan, orchestrator assigns roles
+description: Modular AI team with skill-first plan, orchestration, repair loop, iteration caps
 alwaysApply: true
 ---
 
@@ -15,9 +15,10 @@ Read the index at [`AGENTS.md`](../../AGENTS.md), then apply the modular config:
 ## Non-negotiables
 
 1. **Plan (skills only)** — `PLAN:` lists **required skill modules** + dependencies per [planning-rules.md](planning-rules.md). No worker names in the planner output.
-2. **Orchestrate** — Add **`Assigned agent:`** using [orchestration-rules.md](orchestration-rules.md); `PARALLEL:` vs `SEQUENTIAL:`; parallelize independent work.
+2. **Orchestrate** — Add **`Assigned agent:`** using [orchestration-rules.md](orchestration-rules.md); support **re-execution** (delta tasks, preserve OK work).
 3. **Execute** — One **`Task`** per dispatched task; follow [execution-rules.md](execution-rules.md).
-4. **Close** — **pr-writer** + **reviewer** personas from `.cursor/agents/`.
+4. **Close** — **pr-writer** then **reviewer** using the mandatory **`REVIEW RESULT`** block in [reviewer-agent.md](../agents/reviewer-agent.md).
+5. **Repair** — `MINOR FIXES` → re-run **workers only**; `MAJOR ISSUES` → **replan** + re-orchestrate + **Jira MCP update** when applicable. **Max 2 repair iterations** per feature (see guardrails).
 
 ## Cursor execution
 

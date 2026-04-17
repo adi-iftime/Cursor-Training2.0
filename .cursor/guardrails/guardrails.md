@@ -33,3 +33,12 @@ Cross-cutting **safety and quality** constraints. Agents, skills, and rules must
 ## Honesty about capabilities
 
 - Do not invent libraries, endpoints, or MCP behaviors; use what exists or document assumptions clearly.
+
+---
+
+## Repair loop safety (no infinite churn)
+
+- The system is a **closed feedback loop** (plan → execute → PR → review → optional repair), not a one-way line.
+- **Maximum 2 repair iterations** per feature slice (count a repair iteration when review returns `MINOR FIXES` or `MAJOR ISSUES` and a follow-up dispatch or replan runs).
+- After the cap: **stop automated repair** and **`RECOMMENDED ACTION` must be manual escalation** (human decides next steps); do not spawn further `Task` repair rounds.
+- Never loop “review → same tiny fix” without new evidence; each repair pass must address **concrete** items from the prior `ISSUES` list.
