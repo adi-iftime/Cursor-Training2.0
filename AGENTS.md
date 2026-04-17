@@ -1,27 +1,64 @@
 # AI Team Orchestration
 
-This repository uses a **modular, configuration-first** playbook. **Agents** describe roles, **skills** describe reusable capabilities, **rules** encode planning/orchestration/execution logic, and **guardrails** apply global constraints.
+This repository uses a **modular, configuration-first** playbook. **Agents** describe roles, **skills** describe reusable capabilities, **rules** encode planning/orchestration/execution logic, and **guardrails** apply global constraints. **[`AGENTS.md`](AGENTS.md)** (this file) is the **index and narrative specification**; detailed behavior lives in the linked files under [`.cursor/`](.cursor/).
 
 ---
 
 ## Configuration layout
 
+| Layer | Location | Purpose |
+| ----- | -------- | ------- |
+| **Agents** | [.cursor/agents/](.cursor/agents/) | Role behavior: responsibilities, I/O, constraints (**no embedded skill→worker maps**). |
+| **Skills** | [.cursor/skills/](.cursor/skills/) | Reusable capability modules (technologies, patterns, practices). |
+| **Rules** | [.cursor/rules/](.cursor/rules/) | Planning, orchestration, execution policy. **Always-on Cursor rule:** [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc). |
+| **Guardrails** | [.cursor/guardrails/](.cursor/guardrails/) | Cross-cutting safety and quality limits (scope, repair churn, security order). |
+| **Hooks** | [.cursor/hooks.json](.cursor/hooks.json), [.cursor/hooks/](.cursor/hooks/) | Cursor **command hooks** (e.g. shell after `git push`)—**not** AI agents; they run scripts only. |
 
-| Layer          | Location                                   | Purpose                                                                                                                                       |
-| -------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agents**     | [.cursor/agents/](.cursor/agents/)         | Role behavior: responsibilities, I/O, constraints (**no skill maps**)                                                                         |
-| **Skills**     | [.cursor/skills/](.cursor/skills/)         | Reusable capability modules (technologies, patterns, practices)                                                                               |
-| **Rules**      | [.cursor/rules/](.cursor/rules/)           | Planning, orchestration, and execution policy (`.md`); Cursor auto-rule: [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc) |
-| **Guardrails** | [.cursor/guardrails/](.cursor/guardrails/) | Safety and quality limits                                                                                                                     |
+**Routing:** The planner declares **required skill modules** per task; the **orchestrator** assigns **executing agents** using [orchestration-rules.md](.cursor/rules/orchestration-rules.md) (single place for skill→role defaults and isolation rules).
 
-
-**Routing:** required skills are declared in planning output; **orchestrator** assigns workers using [.cursor/rules/orchestration-rules.md](.cursor/rules/orchestration-rules.md) (single place to extend skill→role defaults).
-
-**Self-healing:** review can route to **targeted worker re-runs** (minor) or **replanner + full orchestration** (major), with iteration caps in [.cursor/guardrails/guardrails.md](.cursor/guardrails/guardrails.md).
+**Self-healing:** Review can route to **targeted worker re-runs** (`MINOR FIXES`) or **replanner + re-orchestration** (`MAJOR ISSUES`), with **maximum 2 repair iterations** per feature slice ([guardrails](.cursor/guardrails/guardrails.md)).
 
 ---
 
-## Control loop (not strictly linear)
+## Agent architecture
+
+All subagents are invoked by the controller via Cursor’s **`Task` tool** (see [Cursor mapping](#cursor-mapping-task-tool-and-parallelism)). Agent **definitions** are files under `.cursor/agents/`; the **`name:`** in each file’s YAML frontmatter is the subagent type string used when dispatching.
+
+| Agent | File | Role (summary) |
+| ----- | ---- | ---------------- |
+| **planner-agent** | [planner-agent.md](.cursor/agents/planner-agent.md) | Decomposes goals into a **`PLAN:`** with tasks, **required skill references**, and **dependencies**. Does **not** assign worker names. |
+| **orchestrator-agent** | [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md) | Turns a plan into **`PARALLEL:` / `SEQUENTIAL:`** execution, maps skills → **`Assigned agent:`**, handles **repair-mode** re-dispatch. |
+| **backend-developer** | [backend-developer.md](.cursor/agents/backend-developer.md) | Backend implementation worker. |
+| **frontend-developer** | [frontend-developer.md](.cursor/agents/frontend-developer.md) | Frontend implementation worker. |
+| **data-engineer** | [data-engineer.md](.cursor/agents/data-engineer.md) | Data pipelines / warehouse / engineering surfaces. |
+| **data-scientist** | [data-scientist.md](.cursor/agents/data-scientist.md) | ML / experimentation / model-related work. |
+| **data-analyst** | [data-analyst.md](.cursor/agents/data-analyst.md) | Analytics, BI, reporting. |
+| **security-engineer** | [security-engineer.md](.cursor/agents/security-engineer.md) | **Security gate** before QA: **CLEAR** / **BLOCKED**. |
+| **qa-engineer** | [qa-engineer.md](.cursor/agents/qa-engineer.md) | Tests / verification **only after** security **CLEAR** for the slice. |
+| **pr-writer-agent** | [pr-writer-agent.md](.cursor/agents/pr-writer-agent.md) | PR **create vs update**, **`featureKey`**, draft defaults, title/body (Git-native; **not** the same as reviewer). |
+| **reviewer-agent** | [reviewer-agent.md](.cursor/agents/reviewer-agent.md) | Final **code/PR review**; emits **`REVIEW RESULT`**; **posts** summary to **GitHub PR** as a comment when a PR exists (also called **PR reviewer** / **pr-reviewer-agent** in prose). |
+
+**Worker pool:** `backend-developer`, `frontend-developer`, `data-engineer`, `data-scientist`, and `data-analyst` are the **implementation** workers. **security-engineer** and **qa-engineer** are **gates/verification** roles. **planner-agent** and **orchestrator-agent** are **meta** roles; **pr-writer-agent** and **reviewer-agent** handle **PR narrative** vs **PR review feedback** respectively.
+
+---
+
+## Execution workflow (full pipeline)
+
+The **mandatory relative order** for any feature slice that includes **implementation work** (backend, frontend, or data implementation deliverables) is defined in [orchestration-rules.md](.cursor/rules/orchestration-rules.md):
+
+1. **Planner** — Emit **`PLAN:`** with **required skills** (`.cursor/skills/*.md` references) and **dependencies** only ([planning-rules.md](.cursor/rules/planning-rules.md)).
+2. **Orchestrator** — Add **`Assigned agent:`** per task; group into **`PARALLEL:`** / **`SEQUENTIAL:`**; enforce **data / ML / BI / security isolation** (split mixed-domain work).
+3. **Implementation workers** — Run tasks that implement the slice (parallel when dependencies allow).
+4. **security-engineer** — **Mandatory** security gate **before QA**; output **CLEAR** or **BLOCKED**.
+5. **qa-engineer** — Runs **only after** security **CLEAR** for the same slice.
+6. **pr-writer-agent** — After QA (or when policy says PR notes are needed): title/description, **update vs create**, **`featureKey`**, draft behavior ([pr-writer-agent.md](.cursor/agents/pr-writer-agent.md)).
+7. **reviewer-agent** — Final review of narrative + diff; must receive **PR URL/number**, base/head, and metadata; emits **`REVIEW RESULT`** and **posts** a **GitHub PR comment** ([reviewer-agent.md](.cursor/agents/reviewer-agent.md)).
+
+**Merge / continue decision:** Driven by **`REVIEW RESULT:`** — `APPROVED` (end), `MINOR FIXES` (targeted re-run workers), `MAJOR ISSUES` (replan). After repairs, loop back to **pr-writer** (if needed) and **reviewer** until **APPROVED** or **repair cap**.
+
+Purely **docs-only** or **analytical** slices with **no** implementation surface may omit implementation workers; still use **security-engineer** when auth, data handling, or deployable artifacts are in play—when uncertain, include the gate.
+
+### Control loop (diagram)
 
 ```mermaid
 flowchart LR
@@ -38,27 +75,95 @@ flowchart LR
   revNode -->|"APPROVED"| endNode[End]
 ```
 
-
-
-Details: [.cursor/rules/orchestration-rules.md](.cursor/rules/orchestration-rules.md) (repair cases), [.cursor/agents/reviewer-agent.md](.cursor/agents/reviewer-agent.md) (mandatory `REVIEW RESULT` format).
+Details: [orchestration-rules.md](.cursor/rules/orchestration-rules.md) (Cases A/B, Jira note on replan), [reviewer-agent.md](.cursor/agents/reviewer-agent.md) (mandatory **`REVIEW RESULT`** and GitHub comment).
 
 ---
 
-## Workflow (primary path)
+## Planner vs orchestrator
 
-1. **Planning** — Follow [.cursor/rules/planning-rules.md](.cursor/rules/planning-rules.md) and [.cursor/agents/planner-agent.md](.cursor/agents/planner-agent.md). Output `PLAN:` with **required skills** and dependencies.
-2. **Orchestration** — Follow [.cursor/rules/orchestration-rules.md](.cursor/rules/orchestration-rules.md) and [.cursor/agents/orchestrator-agent.md](.cursor/agents/orchestrator-agent.md). Add `Assigned agent:` per task; emit `PARALLEL:` / `SEQUENTIAL:`; enforce **data vs ML vs BI vs security** isolation and the **security-before-QA** gate.
-3. **Implementation workers** — `backend-developer`, `frontend-developer`, `data-engineer`, `data-scientist`, `data-analyst` per task, plus [.cursor/rules/execution-rules.md](.cursor/rules/execution-rules.md).
-4. **Security gate** — [.cursor/agents/security-engineer.md](.cursor/agents/security-engineer.md) **before QA**; **BLOCKED** stops QA until fixes and re-gate.
-5. **QA** — [.cursor/agents/qa-engineer.md](.cursor/agents/qa-engineer.md) only after security **CLEAR**.
-6. **PR writing** — [.cursor/agents/pr-writer-agent.md](.cursor/agents/pr-writer-agent.md).
-7. **Review** — [.cursor/agents/reviewer-agent.md](.cursor/agents/reviewer-agent.md) → **repair loop** or **end** per review status and guardrails. The reviewer **posts** its verdict and summary as a **GitHub PR comment** (`gh pr comment` or API) when a PR is in scope.
+| | **planner-agent** | **orchestrator-agent** |
+| -- | ----------------- | ---------------------- |
+| **Outputs** | **`PLAN:`** — tasks, **Required skills:** module refs, **Dependencies:** | **`EXECUTION:`** — **`PARALLEL:`** / **`SEQUENTIAL:`**, **`Assigned agent:`** per task |
+| **Worker names** | **Must not** appear in planner output | **Adds** executing agent per [orchestration-rules.md](.cursor/rules/orchestration-rules.md) |
+| **Repairs** | New **`PLAN:`** on **`MAJOR ISSUES`** (replan) | **Delta** plans on **`MINOR FIXES`**; preserve vs redo lists |
+| **Skills** | References `.cursor/skills/*.md` | Maps skill modules → default roles via **routing table** + role boundaries |
 
 ---
 
-## Guardrails
+## Skills system
 
-See [.cursor/guardrails/guardrails.md](.cursor/guardrails/guardrails.md).
+- **Declaration:** Each planned task lists **required skills** as references to files under `.cursor/skills/` (e.g. `backend.md`, `testing.md`) per [planning-rules.md](.cursor/rules/planning-rules.md).
+- **Consumption:** Workers and the orchestrator use skills as **capability context**; agents do **not** embed full skill catalogs—**orchestration-rules** hold the **default skill module → executing agent** mapping (e.g. `backend.md` → `backend-developer`, `testing.md` → `qa-engineer`, `application-security.md` → `security-engineer`).
+- **Routing influence:** Multi-skill tasks: assign the **most specialized** role for the **primary deliverable**, or **split** the task if two domains are equal weight ([orchestration-rules.md](.cursor/rules/orchestration-rules.md)).
+- **Gaps:** If no skill fits, planner may record **`Skill gap:`**; orchestrator may still assign the **closest** role and note the gap.
+
+---
+
+## Rules and guardrails
+
+### Rule documents
+
+| Rule | Applies to | Purpose |
+| ---- | ---------- | ------- |
+| [planning-rules.md](.cursor/rules/planning-rules.md) | Planner | Task shape, skills-first plans, dependencies, replanning after major review. |
+| [orchestration-rules.md](.cursor/rules/orchestration-rules.md) | Orchestrator | Parallelism, routing, **security-before-QA**, PR writer/reviewer ordering, repair Cases A/B. |
+| [execution-rules.md](.cursor/rules/execution-rules.md) | Workers | Single-task scope, file ownership, validation, repair-pass behavior. |
+| [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc) | **AlwaysApply** | Short non-negotiables (plan skills-only, security before QA, reviewer posts to GitHub, one Task per dispatch, repair cap). |
+
+### Guardrails (high level)
+
+From [guardrails.md](.cursor/guardrails/guardrails.md):
+
+- **Scope:** No scope creep; minimal diffs; no unrelated file churn.
+- **Execution:** One task per slot; honest capability claims; parallelism when independent.
+- **Security order:** No **qa-engineer** for a slice until **security-engineer** is **CLEAR**; no mixed data/ML/BI/security in one atomic task.
+- **Repair:** **Max 2 repair iterations** per slice; then **manual escalation** in **`RECOMMENDED ACTION`**.
+
+**Forbidden / restricted (cross-agent):** Bypassing the security gate for risky changes; infinite repair loops; conflating **pr-writer-agent** (PR body/title) with **reviewer-agent** (review comment only).
+
+---
+
+## PR system behavior
+
+### pr-writer-agent (narrative + lifecycle)
+
+- **`featureKey`:** Internal, branch-aligned identifier from branch name, intent, and diff grouping—used for **matching** open PRs and **update vs create** ([pr-writer-agent.md](.cursor/agents/pr-writer-agent.md)).
+- **Draft default:** New PRs are **Draft** unless the user/orchestrator **explicitly** requests ready-for-review language (`ready for review`, `final PR`, etc.).
+- **Update vs create:** Prefer **update** (append-only description) when the same **`featureKey`** / branch matches; **do not** duplicate PRs for the same feature; preserve draft/ready on routine updates unless explicitly told otherwise.
+- **Branch naming:** Prefer `<type>/<feature-key>` style per agent doc (e.g. `feature/...`, `fix/...`).
+
+### reviewer-agent (quality gate + GitHub visibility)
+
+- Emits structured **`REVIEW RESULT:`** (`APPROVED` | `MINOR FIXES` | `MAJOR ISSUES`) plus **`ISSUES`** and **`RECOMMENDED ACTION`** for the orchestrator.
+- **Must post** a public summary to the **GitHub PR** (`gh pr comment` or API) when a PR is in scope—not chat-only. Does **not** edit PR title/body (that is **pr-writer-agent**).
+
+### Automation hooks (draft PR on push)
+
+- **[`.cursor/hooks/ensure-draft-pr.sh`](.cursor/hooks/ensure-draft-pr.sh)** runs on successful **`git push`** (via **`postToolUse`** / Shell and **`afterShellExecution`** matchers in [hooks.json](.cursor/hooks.json)).
+- Ensures **one draft PR per branch** with **`gh`**, refreshes body from diff vs default base; needs **`gh`** auth and **`jq`**.
+- This is **script automation**, not **reviewer-agent**. It does **not** run the AI reviewer; the orchestrator should still dispatch **reviewer-agent** with PR URL/metadata after the PR exists.
+
+---
+
+## Cursor mapping: `Task` tool and parallelism
+
+- **One** runnable task → **one** **`Task`** subagent invocation unless guardrails forbid splitting ([orchestration-rules.md](.cursor/rules/orchestration-rules.md)).
+- **Parallel:** Multiple **`Task`** calls in the **same assistant turn** when tasks are independent and dependencies allow.
+- **Sequential:** Wait for upstream outputs (notably **security gate → QA → pr-writer → reviewer**).
+
+For small, single-file requests, you may shorten ceremony but must still honor **guardrails** and **minimal diffs** ([ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc)).
+
+---
+
+## Workflow checklist (numbered path)
+
+1. **Planning** — [planning-rules.md](.cursor/rules/planning-rules.md), [planner-agent.md](.cursor/agents/planner-agent.md): **`PLAN:`** with **required skills** and dependencies.
+2. **Orchestration** — [orchestration-rules.md](.cursor/rules/orchestration-rules.md), [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md): **`Assigned agent:`**, **`PARALLEL:`** / **`SEQUENTIAL:`**, isolation rules.
+3. **Implementation workers** — Per task; [execution-rules.md](.cursor/rules/execution-rules.md).
+4. **Security gate** — [security-engineer.md](.cursor/agents/security-engineer.md); **BLOCKED** stops QA until fixed and re-gated.
+5. **QA** — [qa-engineer.md](.cursor/agents/qa-engineer.md) only after **CLEAR**.
+6. **PR writing** — [pr-writer-agent.md](.cursor/agents/pr-writer-agent.md).
+7. **Review** — [reviewer-agent.md](.cursor/agents/reviewer-agent.md): **`REVIEW RESULT`** + **GitHub PR comment**; then repair loop or end.
 
 ---
 
@@ -68,12 +173,6 @@ Prefer fewer roles, smaller tasks, and true parallelism when dependencies allow.
 
 ---
 
-## Cursor mapping
+## Consistency note
 
-Subagents map to the **`Task` tool**. Parallel independent tasks → **multiple `Task` calls in one assistant turn**; dependent tasks → run after upstream results are available.
-
-For trivial, single-file requests, you may shorten ceremony but must still honor **guardrails** and **minimal diffs**.
-
-### Automated draft PR (hooks)
-
-After a **successful `git push`** (Agent Shell tool or integrated terminal), project hooks run [`.cursor/hooks/ensure-draft-pr.sh`](.cursor/hooks/ensure-draft-pr.sh): ensure **one GitHub draft PR per branch** via `gh`, refresh the PR body from the latest diff vs the default base (`main` / `master`), and align defaults with [.cursor/agents/pr-writer-agent.md](.cursor/agents/pr-writer-agent.md). Requires **`gh` authenticated** and **`jq`** on `PATH`. Narrative PR polish still uses **`Task` → `pr-writer-agent`** when you want LLM-authored title/body; the hook guarantees the **draft PR object** exists on the remote without waiting for a manual “create PR” step.
+If this file ever **diverges** from `.cursor/rules/` or `.cursor/agents/`, treat the **linked rule and agent files** as the behavioral source of truth and **update this index** to match.
