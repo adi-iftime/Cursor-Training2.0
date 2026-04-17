@@ -32,3 +32,8 @@ Configuration for **worker** invocations (backend, frontend, data, QA) once the 
 - When invoked for a **repair iteration**, the orchestrator supplies **prior review `ISSUES`** and the **narrow scope** to fix.
 - Address only listed items; do not expand into unrelated refactors.
 - If an issue is unclear, return questions instead of guessing—especially when near the **repair iteration cap** in guardrails.
+
+## After the security gate
+
+- **Implementation workers** must treat **security-engineer** findings as input: fix **BLOCKED** items before expecting QA dispatch.
+- **qa-engineer** should assume security gate **CLEAR** for the slice; if not, stop and escalate to the orchestrator.

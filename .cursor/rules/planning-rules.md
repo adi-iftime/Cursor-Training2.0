@@ -7,6 +7,8 @@ Configuration for **planner-agent** behavior. Agent personas live in `.cursor/ag
 - Prefer **vertical slices** that deliver testable value: smallest unit that still makes sense to review.
 - Split when: distinct dependency graphs, different risk domains, or different validation commands.
 - Merge when: separation would force artificial handoffs or duplicate context without benefit.
+- **Data / ML / BI / security:** never combine **pipeline engineering**, **model building**, **BI reporting**, and **security review** in one task—use separate tasks per `.cursor/rules/orchestration-rules.md` isolation table.
+- **QA tasks** must declare a dependency on the **security gate** task for the same slice (security **CLEAR**) before tests execute, per orchestration rules.
 
 ## Skills-first (mandatory)
 
