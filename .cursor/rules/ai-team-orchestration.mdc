@@ -1,29 +1,29 @@
 ---
-description: Skill-first planning, parallel Task execution, PR summary and review per AGENTS.md
+description: Modular AI team — agents/skills/rules/guardrails; skill-first plan, orchestrator assigns roles
 alwaysApply: true
 ---
 
 # AI team orchestration
 
-For **multi-step or multi-area work**, follow the full playbook in [`AGENTS.md`](../../AGENTS.md) at the repository root.
+Read the index at [`AGENTS.md`](../../AGENTS.md), then apply the modular config:
+
+- **Agents:** [`../agents/`](../agents/)
+- **Skills:** [`../skills/`](../skills/)
+- **Rules:** [planning-rules.md](planning-rules.md), [orchestration-rules.md](orchestration-rules.md), [execution-rules.md](execution-rules.md)
+- **Guardrails:** [`../guardrails/guardrails.md`](../guardrails/guardrails.md)
 
 ## Non-negotiables
 
-1. **Plan first (skills → agent)** — Each `PLAN:` task lists **required skills**, then **assigned agent** resolved from the skill registry (never agent-first). Include `[depends on …]` or `[no dependencies]`.
-2. **Orchestrate** — `PARALLEL:` vs `SEQUENTIAL:`; do not serialize independent work if subagents can run together.
-3. **Execute** — One task per **`Task`** subagent; minimal diffs; no unrelated file edits.
-4. **Close** — **pr-writer** + **reviewer** per `AGENTS.md`.
-
-## Routing
-
-- Match task needs to the registry in `AGENTS.md`; on ties pick the **most specialized** agent; if imperfect, add **`Skill gap:`**.
-- New roles: extend the registry row list only—**no** separate task-name→agent maps.
+1. **Plan (skills only)** — `PLAN:` lists **required skill modules** + dependencies per [planning-rules.md](planning-rules.md). No worker names in the planner output.
+2. **Orchestrate** — Add **`Assigned agent:`** using [orchestration-rules.md](orchestration-rules.md); `PARALLEL:` vs `SEQUENTIAL:`; parallelize independent work.
+3. **Execute** — One **`Task`** per dispatched task; follow [execution-rules.md](execution-rules.md).
+4. **Close** — **pr-writer** + **reviewer** personas from `.cursor/agents/`.
 
 ## Cursor execution
 
-- **Parallel** = multiple `Task` calls **in the same turn** when independent.
-- **Sequential** = after dependency results, spawn the next `Task`(s).
+- **Parallel** = multiple `Task` calls in the **same turn** when allowed.
+- **Sequential** = after dependency outputs exist.
 
-## When to skip ceremony
+## Trivial requests
 
-Trivial single change → small diffs still; full planner loop optional (skills routing still applies when you produce a multi-task plan).
+Single obvious change → still minimal diffs and guardrails; full multi-step flow optional.
