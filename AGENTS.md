@@ -8,14 +8,69 @@ This repository uses a **lean simulated engineering team** for planning, executi
 
 | Role | Responsibility |
 |------|----------------|
-| **planner-agent** | Break work into small tasks, assign one agent type per task, list dependencies |
+| **planner-agent** | Break work into small tasks; for each task list **required skills** first, then **resolve** the best-fit worker from the [Skill registry](#skill-registry-mandatory-for-routing); one agent per task; list dependencies |
 | **orchestrator-agent** | Read the plan, group parallel vs sequential work, dispatch execution |
-| **backend-developer** | Backend code: Python, Java/Kotlin, REST APIs, clean code / SOLID |
-| **frontend-developer** | UI: React, TypeScript, basic UI/UX |
-| **data-engineer** | Data: PySpark, Databricks, SQL, batch/stream pipelines |
-| **qa-engineer** | Tests: unit/integration, pytest / JUnit |
+| **backend-developer** | Backend implementation (see skill registry) |
+| **frontend-developer** | Frontend implementation (see skill registry) |
+| **data-engineer** | Data / pipeline implementation (see skill registry) |
+| **qa-engineer** | Test design and automation (see skill registry) |
 | **pr-writer-agent** | Summarize implementation, list changed areas, explain how to test |
 | **reviewer-agent** | Code review: bugs, practices, missing tests, improvements |
+
+---
+
+## Skill registry (mandatory for routing)
+
+The planner **must** treat this table as the **source of truth** for which skills each worker covers. **Do not** use fixed “task type → agent” shortcuts; derive the agent from skills every time.
+
+| Agent | Skills covered (non-exhaustive; add rows/columns as the team evolves) |
+|-------|------------------------------------------------------------------------|
+| **backend-developer** | Python; Java/Kotlin; REST APIs; services; clean code / SOLID |
+| **frontend-developer** | React; TypeScript; UI/UX basics; client-side integration |
+| **data-engineer** | PySpark; Databricks; SQL; batch/stream data pipelines |
+| **qa-engineer** | Unit tests; integration tests; pytest; JUnit; quality gates |
+
+**Future extensibility:** When a new role is introduced (e.g. **data-analyst** with Power BI, SQL, dashboards), **append** a row to this registry with that agent’s skills. The planner then matches task-required skills against the **updated** registry at planning time. Maintain **one** registry (here)—not a separate hardcoded routing map keyed by task names.
+
+---
+
+## Skill-based agent routing (mandatory)
+
+### Rules
+
+1. Each task **must** start from **required skills** (capabilities), not from a pre-picked agent.
+2. The planner **must** map those skills to the **single best-fit** agent using the skill registry and the selection logic below.
+3. Every planned task **must** show **both**:
+   - **Required skills** (explicit list), and  
+   - **Assigned agent** (resolved from skills, with brief rationale if helpful).
+
+### Agent selection logic
+
+For each task:
+
+1. **Inspect** the skill registry and the task’s required skills.
+2. **Match** task requirements to agents whose skills cover the needs.
+3. **Choose** the **best fit**:
+   - If **multiple** agents match → pick the **most specialized** agent (the narrowest role that still covers the requirement).
+   - If **no** agent is an exact match → pick the **closest** agent and record a **`Skill gap:`** line (what is missing or assumed).
+
+### Invalid planning (failure conditions)
+
+Planning is **invalid** if it:
+
+- Assigns agents **without** listing required skills first.
+- **Hardcodes** agent choice by task label (e.g. “API task = backend-developer”) **without** a skill match justification tied to the registry.
+- **Ignores** a clearly better-matching agent when that agent appears in the registry and covers more of the required skills.
+
+### Example
+
+**Task:** “Build ETL pipeline using Databricks”
+
+**Step 1 — required skills:** Databricks; PySpark; batch data pipelines  
+
+**Step 2 — agent resolution:** **data-engineer** (registry: Databricks, PySpark, pipelines)
+
+**In plan output:** include the task title, the skill list, and `Assigned agent: data-engineer`.
 
 ---
 
@@ -24,17 +79,30 @@ This repository uses a **lean simulated engineering team** for planning, executi
 When a project or task is given, the **planner** must:
 
 - Break the work into **small** tasks.
-- Assign each task to **exactly one** worker agent type.
+- For **each** task: enumerate **required skills**, then **assigned agent** (from the registry + selection logic above—never the reverse order).
 - Identify **dependencies** between tasks.
 
-**Output format:**
+**Output format** (every task includes skills **and** agent):
 
 ```text
 PLAN:
-- Task 1 (agent: backend-developer) [no dependencies]
-- Task 2 (agent: data-engineer) [no dependencies]
-- Task 3 (agent: qa-engineer) [depends on Task 1, Task 2]
+- Task 1: <short title>
+  - Required skills: <skill>, <skill>, …
+  - Assigned agent: <agent>   (match: <one-line why, tied to registry>)
+  - Dependencies: [no dependencies]
+
+- Task 2: <short title>
+  - Required skills: …
+  - Assigned agent: …
+  - Dependencies: [no dependencies]
+
+- Task 3: <short title>
+  - Required skills: …
+  - Assigned agent: …
+  - Dependencies: [depends on Task 1, Task 2]
 ```
+
+If there is a skill gap: add `Skill gap: <what is not covered or assumed>` under that task.
 
 Keep tasks **small** and **independent** when possible.
 
@@ -92,15 +160,6 @@ The **reviewer** must:
 
 ---
 
-## Skills (minimal reference)
-
-- **backend-developer:** Python, Java/Kotlin, REST APIs, SOLID.
-- **frontend-developer:** React, TypeScript, UI/UX basics.
-- **data-engineer:** PySpark, Databricks, SQL, pipelines.
-- **qa-engineer:** unit/integration tests, pytest, JUnit.
-
----
-
 ## Guardrails (strict)
 
 - **Never** merge multiple tasks into one worker run when they could be separate.
@@ -109,6 +168,7 @@ The **reviewer** must:
 - **Always** keep tasks small and isolated.
 - **Do not** invent libraries or APIs; use what exists in the repo or document assumptions.
 - **Do not** expand scope beyond the assigned task.
+- **Do not** skip **skill-first** routing: required skills must appear before the assigned agent in the plan.
 
 ---
 
@@ -122,7 +182,7 @@ The **reviewer** must:
 
 ## Goal
 
-A simple, reliable flow: **planner** splits work clearly → **orchestrator** runs independent work in parallel → **workers** ship minimal diffs → **pr-writer** and **reviewer** close the loop.
+A simple, reliable flow: **planner** splits work clearly and assigns workers **from required skills** → **orchestrator** runs independent work in parallel → **workers** ship minimal diffs → **pr-writer** and **reviewer** close the loop.
 
 ---
 
