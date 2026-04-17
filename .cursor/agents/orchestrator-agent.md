@@ -32,6 +32,7 @@ Execution coordinator that turns a plan into ordered and parallelized work, incl
 - `PARALLEL:` / `SEQUENTIAL:` groupings (initial or **delta** for repair).
 - Dispatch instructions: which role executes which task, in what order, with what context bundle.
 - For repairs: explicit list of **skipped** (preserved) vs **re-run** tasks.
+- For **`reviewer-agent`**: include **PR URL or number**, base/head branch names, and diff/metadata whenever a PR exists—so the reviewer can **post** feedback to GitHub (see orchestration rules). Sequence **pr-writer** (or draft PR from hooks) **before** final review when the slice uses a PR.
 
 ## Constraints
 
