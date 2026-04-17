@@ -52,7 +52,7 @@ Details: [.cursor/rules/orchestration-rules.md](.cursor/rules/orchestration-rule
 4. **Security gate** — [.cursor/agents/security-engineer.md](.cursor/agents/security-engineer.md) **before QA**; **BLOCKED** stops QA until fixes and re-gate.
 5. **QA** — [.cursor/agents/qa-engineer.md](.cursor/agents/qa-engineer.md) only after security **CLEAR**.
 6. **PR writing** — [.cursor/agents/pr-writer-agent.md](.cursor/agents/pr-writer-agent.md).
-7. **Review** — [.cursor/agents/reviewer-agent.md](.cursor/agents/reviewer-agent.md) → **repair loop** or **end** per review status and guardrails.
+7. **Review** — [.cursor/agents/reviewer-agent.md](.cursor/agents/reviewer-agent.md) → **repair loop** or **end** per review status and guardrails. The reviewer **posts** its verdict and summary as a **GitHub PR comment** (`gh pr comment` or API) when a PR is in scope.
 
 ---
 

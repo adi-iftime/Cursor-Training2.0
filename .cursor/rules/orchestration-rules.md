@@ -65,7 +65,11 @@ For any feature slice that includes **implementation work** (backend, frontend, 
 2. **`security-engineer`** — **mandatory security gate** before QA: produces a findings report and a gate decision (**CLEAR** / **BLOCKED**).
 3. **`qa-engineer`** — **only after** security gate is **CLEAR** for the same slice (model as explicit dependency in `EXECUTION` / task graph).
 4. **`pr-writer-agent`** — after QA completes for the slice (or when policy says PR notes are needed).
-5. **`reviewer-agent`** — final review pass on the assembled change narrative and diffs.
+5. **`reviewer-agent`** — final review pass on the assembled change narrative and diffs; **must** post its summary as a **GitHub PR comment** (see `.cursor/agents/reviewer-agent.md`). Dispatch **after** a PR exists or is updated (draft PR from hooks and/or pr-writer output) so the reviewer receives **PR URL or number**, **diff vs base**, and **PR metadata**.
+
+**Reviewer inputs (mandatory bundle):** `PR URL` or (`owner/repo` + `PR number`), base branch name, head branch, and the same diff / description context used for review.
+
+**Reviewer output:** structured `REVIEW RESULT` **and** a posted GitHub comment per reviewer-agent—**not** optional when a PR is in scope.
 
 **Hard blocker:** if security is **BLOCKED**, **do not dispatch QA** for that slice. Return to the appropriate **implementation workers** (and/or planner for scope errors), then **re-run the security gate** before QA resumes.
 
@@ -91,7 +95,7 @@ SEQUENTIAL:
 
 ## Self-healing loop (post-review)
 
-The workflow is a **closed loop**, not strictly linear: **Planner → Orchestrator → Workers → Security gate → QA → PR writer → Reviewer → (repair)**.
+The workflow is a **closed loop**, not strictly linear: **Planner → Orchestrator → Workers → Security gate → QA → PR writer → Reviewer → (repair)**. After **PR create/update**, the orchestrator **must** invoke **`reviewer-agent`** with PR identifiers so the review can be **posted to the PR thread** (GitHub-native feedback loop).
 
 ### Reviewer routing (input to orchestrator)
 
