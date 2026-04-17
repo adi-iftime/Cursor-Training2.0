@@ -25,3 +25,9 @@ Reusable capability definition. **Not** tied to any single agent; routing is def
 - Prefer explicit schemas/contracts where the codebase uses them
 - Document assumptions about upstream data freshness and keys
 - Avoid hardcoding secrets; use existing configuration mechanisms
+
+## Separation (routing)
+
+- **ML / predictive modeling** workstreams use `.cursor/skills/machine-learning.md`.
+- **BI / reporting / KPI dashboards** use `.cursor/skills/business-intelligence.md`.
+- This module covers **infrastructure and pipeline** style data engineering only.

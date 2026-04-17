@@ -36,6 +36,15 @@ Cross-cutting **safety and quality** constraints. Agents, skills, and rules must
 
 ---
 
+## Security gate (hard ordering)
+
+- **Do not** dispatch **qa-engineer** work for a slice until **security-engineer** has produced a **CLEAR** gate for that slice (see `.cursor/rules/orchestration-rules.md`).
+- **Do not** bypass the security gate for “small” changes when the change touches auth, data handling, deployable code, or dependencies—when uncertain, run the gate.
+- If security is **BLOCKED**, stop QA dispatch; route fixes to implementation workers, then **re-run the security gate** before QA proceeds.
+- **Do not** assign mixed **data-engineer / data-scientist / data-analyst** responsibilities in a single atomic task—split instead.
+
+---
+
 ## Repair loop safety (no infinite churn)
 
 - The system is a **closed feedback loop** (plan → execute → PR → review → optional repair), not a one-way line.

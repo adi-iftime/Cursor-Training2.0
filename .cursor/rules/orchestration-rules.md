@@ -21,6 +21,19 @@ Configuration for **orchestrator-agent** behavior: ordering, parallelism, and **
 4. If no role fits, assign the **closest** role and record **`Skill gap:`** in the execution brief.
 5. Emit an **execution plan** that adds `Assigned agent:` per task (this is the system-of-record for who runs the task).
 
+### Strict data / analytics / ML / security isolation
+
+Each **atomic** task maps to **exactly one** of these executing roles (no mixed ownership in a single task):
+
+| Intent (examples) | Route to |
+|---------------------|----------|
+| ETL/ELT, ingestion, streaming, Spark/Databricks/Kafka/Airflow, warehouse/medallion physicalization | `data-engineer` |
+| ML training, evaluation, prediction services, experimentation | `data-scientist` |
+| SQL analysis, KPI/reporting, Power BI/Tableau, business insights | `data-analyst` |
+| OWASP-style review, API/auth review, dependency risk, misconfiguration / leak findings | `security-engineer` |
+
+If intent spans more than one row → **split** into separate tasks in planning; **never** assign mixed responsibilities to a single task.
+
 ### Default routing table (skill module → role)
 
 | Skill module file | Default executing agent |
@@ -28,9 +41,28 @@ Configuration for **orchestrator-agent** behavior: ordering, parallelism, and **
 | `backend.md` | `backend-developer` |
 | `frontend.md` | `frontend-developer` |
 | `data-engineering.md` | `data-engineer` |
+| `machine-learning.md` | `data-scientist` |
+| `business-intelligence.md` | `data-analyst` |
+| `application-security.md` | `security-engineer` |
 | `testing.md` | `qa-engineer` |
 
 **Multi-skill tasks:** pick the agent responsible for the **largest** or **riskiest** slice (primary deliverable). If the task truly spans equal-weight slices, **split the task** in planning rather than overloading one worker.
+
+---
+
+## Mandatory execution phases (security gate)
+
+For any feature slice that includes **implementation work** (backend, frontend, data-engineer, data-scientist, or data-analyst deliverables), the orchestrator **must** enforce this **relative order**:
+
+1. **Implementation workers** — all implementation tasks for the slice, respecting their own dependency graph and parallelism rules.
+2. **`security-engineer`** — **mandatory security gate** before QA: produces a findings report and a gate decision (**CLEAR** / **BLOCKED**).
+3. **`qa-engineer`** — **only after** security gate is **CLEAR** for the same slice (model as explicit dependency in `EXECUTION` / task graph).
+4. **`pr-writer-agent`** — after QA completes for the slice (or when policy says PR notes are needed).
+5. **`reviewer-agent`** — final review pass on the assembled change narrative and diffs.
+
+**Hard blocker:** if security is **BLOCKED**, **do not dispatch QA** for that slice. Return to the appropriate **implementation workers** (and/or planner for scope errors), then **re-run the security gate** before QA resumes.
+
+Purely analytical or docs-only slices with **no** implementation surface may omit implementation workers; still run **security-engineer** when the change touches auth, data handling, or deployable artifacts—when in doubt, include the gate.
 
 ## Cursor execution mapping
 
@@ -52,7 +84,7 @@ SEQUENTIAL:
 
 ## Self-healing loop (post-review)
 
-The workflow is a **closed loop**, not strictly linear: **Planner → Orchestrator → Workers → PR → Reviewer → (repair)**.
+The workflow is a **closed loop**, not strictly linear: **Planner → Orchestrator → Workers → Security gate → QA → PR writer → Reviewer → (repair)**.
 
 ### Reviewer routing (input to orchestrator)
 
@@ -70,6 +102,7 @@ Respect **repair iteration limits** in `.cursor/guardrails/guardrails.md`.
 - Build a **delta execution plan**: only tasks/workers implicated by `ISSUES` and `RECOMMENDED ACTION`.
 - Re-dispatch **only** those workers via **`Task`**, in parallel when their dependencies are satisfied.
 - **Preserve** outputs from tasks not listed for redo (do not re-run unchanged lanes).
+- If **implementation** code paths change, **re-run `security-engineer`** for the slice before any **qa-engineer** dispatch resumes (gate must return **CLEAR** again).
 
 ### Case B — Major issues
 
