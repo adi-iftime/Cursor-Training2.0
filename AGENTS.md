@@ -6,12 +6,14 @@ This repository uses a **modular, configuration-first** playbook. **Agents** des
 
 ## Configuration layout
 
-| Layer | Location | Purpose |
-|-------|----------|---------|
-| **Agents** | [.cursor/agents/](.cursor/agents/) | Role behavior: responsibilities, I/O, constraints (**no skill maps**) |
-| **Skills** | [.cursor/skills/](.cursor/skills/) | Reusable capability modules (technologies, patterns, practices) |
-| **Rules** | [.cursor/rules/](.cursor/rules/) | Planning, orchestration, and execution policy (`.md`); Cursor auto-rule: [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc) |
-| **Guardrails** | [.cursor/guardrails/](.cursor/guardrails/) | Safety and quality limits |
+
+| Layer          | Location                                   | Purpose                                                                                                                                       |
+| -------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Agents**     | [.cursor/agents/](.cursor/agents/)         | Role behavior: responsibilities, I/O, constraints (**no skill maps**)                                                                         |
+| **Skills**     | [.cursor/skills/](.cursor/skills/)         | Reusable capability modules (technologies, patterns, practices)                                                                               |
+| **Rules**      | [.cursor/rules/](.cursor/rules/)           | Planning, orchestration, and execution policy (`.md`); Cursor auto-rule: [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc) |
+| **Guardrails** | [.cursor/guardrails/](.cursor/guardrails/) | Safety and quality limits                                                                                                                     |
+
 
 **Routing:** required skills are declared in planning output; **orchestrator** assigns workers using [.cursor/rules/orchestration-rules.md](.cursor/rules/orchestration-rules.md) (single place to extend skill→role defaults).
 
@@ -35,6 +37,8 @@ flowchart LR
   revNode -->|"MAJOR_ISSUES"| plannerNode
   revNode -->|"APPROVED"| endNode[End]
 ```
+
+
 
 Details: [.cursor/rules/orchestration-rules.md](.cursor/rules/orchestration-rules.md) (repair cases), [.cursor/agents/reviewer-agent.md](.cursor/agents/reviewer-agent.md) (mandatory `REVIEW RESULT` format).
 
