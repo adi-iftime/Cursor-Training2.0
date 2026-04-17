@@ -1,3 +1,10 @@
+---
+name: guardrails
+description: Cross-cutting safety limits on scope, parallelism, security order, and repair churn.
+type: guardrail
+severity: high
+---
+
 # Guardrails
 
 Cross-cutting **safety and quality** constraints. Agents, skills, and rules must all respect this layer.

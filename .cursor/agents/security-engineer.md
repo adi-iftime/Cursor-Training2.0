@@ -1,3 +1,11 @@
+---
+name: security-engineer
+description: Security gate reviews and findings before QA for assigned change slices.
+type: agent
+skills:
+  - application-security
+---
+
 # security-engineer
 
 ## Role

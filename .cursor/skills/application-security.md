@@ -1,3 +1,10 @@
+---
+name: application-security
+description: Threat-aware review, API and dependency risk, and secure defaults.
+type: skill
+domain: security
+---
+
 # Skill: Application security
 
 Reusable capability definition for **security review and hardening guidance**. Not tied to a single agent; routing is defined in orchestration rules.

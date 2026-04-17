@@ -1,3 +1,10 @@
+---
+name: testing
+description: Unit and integration tests, runners, fixtures, and quality gates.
+type: skill
+domain: qa
+---
+
 # Skill: Testing
 
 Reusable capability definition. **Not** tied to any single agent; routing is defined in orchestration rules.

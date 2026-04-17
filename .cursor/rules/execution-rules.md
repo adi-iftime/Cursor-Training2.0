@@ -1,3 +1,10 @@
+---
+name: execution-rules
+description: Worker scope, determinism, file ownership, and repair-pass behavior.
+type: rule
+applies_to: workers
+---
+
 # Execution rules
 
 Configuration for **worker** invocations (backend, frontend, data, QA) once the orchestrator has dispatched work.

@@ -1,3 +1,11 @@
+---
+name: frontend-developer
+description: Client-side UI, components, and integrations for assigned tasks.
+type: agent
+skills:
+  - frontend
+---
+
 # frontend-developer
 
 ## Role

@@ -1,3 +1,10 @@
+---
+name: machine-learning
+description: Model training, evaluation, features, and ML experimentation.
+type: skill
+domain: data
+---
+
 # Skill: Machine learning
 
 Reusable capability definition for **modeling and prediction**. Not tied to a single agent; routing is defined in orchestration rules.

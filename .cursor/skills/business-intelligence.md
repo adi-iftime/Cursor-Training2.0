@@ -1,3 +1,10 @@
+---
+name: business-intelligence
+description: SQL analytics, KPIs, dashboards, and business-facing reporting.
+type: skill
+domain: data
+---
+
 # Skill: Business intelligence
 
 Reusable capability definition for **insights, KPIs, and visualization**. Not tied to a single agent; routing is defined in orchestration rules.

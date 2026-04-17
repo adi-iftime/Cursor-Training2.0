@@ -1,3 +1,11 @@
+---
+name: data-scientist
+description: Predictive modeling, ML training, and experimentation for assigned tasks.
+type: agent
+skills:
+  - machine-learning
+---
+
 # data-scientist
 
 ## Role

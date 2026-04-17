@@ -1,3 +1,11 @@
+---
+name: data-analyst
+description: SQL analytics, KPIs, reporting, and visualization for assigned tasks.
+type: agent
+skills:
+  - business-intelligence
+---
+
 # data-analyst
 
 ## Role

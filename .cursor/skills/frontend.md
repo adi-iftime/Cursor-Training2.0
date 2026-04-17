@@ -1,3 +1,10 @@
+---
+name: frontend
+description: Client UI, components, TypeScript, and browser-side integration.
+type: skill
+domain: frontend
+---
+
 # Skill: Frontend
 
 Reusable capability definition. **Not** tied to any single agent; routing is defined in orchestration rules.
