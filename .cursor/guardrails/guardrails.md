@@ -9,6 +9,8 @@ severity: high
 
 Cross-cutting **safety and quality** constraints. Agents, skills, and rules must all respect this layer.
 
+**Critical — execution gate:** [require-plan-approval.md](require-plan-approval.md) blocks **`Task`** / subagent execution until the user **explicitly approves** the current plan (or authorized repair batch). Overrides ad-hoc execution shortcuts.
+
 ## No scope creep
 
 - Implement requested behavior only; do not add features, refactors, or dependencies not implied by the task.
