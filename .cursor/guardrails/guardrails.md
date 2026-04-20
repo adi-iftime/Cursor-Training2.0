@@ -11,6 +11,8 @@ Cross-cutting **safety and quality** constraints. Agents, skills, and rules must
 
 **Critical — execution gate:** [require-plan-approval.md](require-plan-approval.md) blocks **`Task`** / subagent execution until the user **explicitly approves** the current plan (or authorized repair batch). Overrides ad-hoc execution shortcuts.
 
+**High — atomic tasks & parallelism:** [enforce-atomic-parallelism.md](enforce-atomic-parallelism.md) requires **atomic** planned tasks and **parallel** dispatch for independent work (including **same agent role** → **separate `Task`** per task).
+
 ## No scope creep
 
 - Implement requested behavior only; do not add features, refactors, or dependencies not implied by the task.

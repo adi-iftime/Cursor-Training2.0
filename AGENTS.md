@@ -12,7 +12,7 @@ This repository uses a **modular, configuration-first** playbook. **Agents** des
 | **Agents**     | [.cursor/agents/](.cursor/agents/)                                         | Role behavior: responsibilities, I/O, constraints (**no embedded skill→worker maps**).                                                      |
 | **Skills**     | [.cursor/skills/](.cursor/skills/)                                         | Reusable capability modules (technologies, patterns, practices).                                                                            |
 | **Rules**      | [.cursor/rules/](.cursor/rules/)                                           | Planning, orchestration, execution policy. **Always-on Cursor rule:** [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc). |
-| **Guardrails** | [.cursor/guardrails/](.cursor/guardrails/)                                 | Cross-cutting safety and quality limits (scope, repair churn, security order). **[require-plan-approval](.cursor/guardrails/require-plan-approval.md)** (critical): no `Task` until plan is approved. |
+| **Guardrails** | [.cursor/guardrails/](.cursor/guardrails/)                                 | Cross-cutting safety and quality limits. **[require-plan-approval](.cursor/guardrails/require-plan-approval.md)** (critical): no `Task` until plan is approved. **[enforce-atomic-parallelism](.cursor/guardrails/enforce-atomic-parallelism.md)** (high): atomic tasks + parallel dispatch (one `Task` per task). |
 | **Hooks**      | [.cursor/hooks.json](.cursor/hooks.json), [.cursor/hooks/](.cursor/hooks/) | Cursor **command hooks** (e.g. shell after `git push`)—**not** AI agents; they run scripts only.                                            |
 
 
@@ -40,6 +40,25 @@ This repository uses a **modular, configuration-first** playbook. **Agents** des
 
 ---
 
+## Atomic task execution
+
+- Tasks must be split into the **smallest independent units** that still make sense to implement and review ([planner-agent.md](.cursor/agents/planner-agent.md), [enforce-atomic-parallelism.md](.cursor/guardrails/enforce-atomic-parallelism.md)).
+- **Independent** tasks (no dependency edges between them, no conflicting mutable ownership) **must** be scheduled in **`PARALLEL:`** and executed in parallel when tooling allows—not serialized “to be safe.”
+
+### Same-agent parallelism
+
+The orchestrator resolves **skills → agent role** per task. If multiple tasks map to the **same** role (e.g. three tasks all → `backend-developer`) and they are **independent**:
+
+- Spawn **separate** subagents: **one `Task` invocation per task** (e.g. three parallel `Task` calls in one turn).
+- **Never** reuse a **single** subagent run to implement several independent planned tasks at once.
+- **Never** batch independent deliverables into one task in the `PLAN:` just to avoid multiple `Task` calls.
+
+**Example:** Three backend tasks A, B, C with no mutual dependencies → **`PARALLEL:`** with three lines, each **`Assigned agent: backend-developer`**, each a distinct **`Task`** (three parallel subagents). See [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md).
+
+**Exceptions:** True dependencies, shared file/module exclusivity, and **mandatory phase order** (e.g. security gate before QA) still force **sequential** edges—see [orchestration-rules.md](.cursor/rules/orchestration-rules.md).
+
+---
+
 ## Agent architecture
 
 All subagents are invoked by the controller via Cursor’s `**Task` tool** (see [Cursor mapping](#cursor-mapping-task-tool-and-parallelism)). Agent **definitions** are files under `.cursor/agents/`; the `**name:`** in each file’s YAML frontmatter is the subagent type string used when dispatching.
@@ -47,8 +66,8 @@ All subagents are invoked by the controller via Cursor’s `**Task` tool** (see 
 
 | Agent                  | File                                                          | Role (summary)                                                                                                                                                                        |
 | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **planner-agent**      | [planner-agent.md](.cursor/agents/planner-agent.md)           | Decomposes goals into **`PLAN:`** + **`STATUS: WAITING_FOR_APPROVAL`**; does **not** assign worker names or trigger execution. |
-| **orchestrator-agent** | [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md) | After **explicit approval**, turns plan into **`PARALLEL:`** / **`SEQUENTIAL:`**, maps skills → **`Assigned agent:`**; **blocks `Task`** until approved. |
+| **planner-agent**      | [planner-agent.md](.cursor/agents/planner-agent.md)           | **`PLAN:`** with **atomic** tasks + **`WAITING_FOR_APPROVAL`**; skills only (no worker names); splits independent work. |
+| **orchestrator-agent** | [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md) | After approval: **`PARALLEL:`** / **`SEQUENTIAL:`**, **`Assigned agent:`**; **one `Task` per task** (parallel same-role OK); **blocks `Task`** until approved. |
 | **backend-developer**  | [backend-developer.md](.cursor/agents/backend-developer.md)   | Backend implementation worker.                                                                                                                                                        |
 | **frontend-developer** | [frontend-developer.md](.cursor/agents/frontend-developer.md) | Frontend implementation worker.                                                                                                                                                       |
 | **data-engineer**      | [data-engineer.md](.cursor/agents/data-engineer.md)           | Data pipelines / warehouse / engineering surfaces.                                                                                                                                    |
@@ -139,6 +158,7 @@ Details: [orchestration-rules.md](.cursor/rules/orchestration-rules.md) (Cases A
 | [execution-rules.md](.cursor/rules/execution-rules.md)               | Workers         | Single-task scope, file ownership, validation, repair-pass behavior.                                                       |
 | [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc) | **AlwaysApply** | Short non-negotiables (plan skills-only, security before QA, reviewer posts to GitHub, one Task per dispatch, repair cap). |
 | [require-plan-approval.md](.cursor/guardrails/require-plan-approval.md) | **Guardrail (critical)** | Blocks **`Task`** until user approves plan (or authorized repair batch). |
+| [enforce-atomic-parallelism.md](.cursor/guardrails/enforce-atomic-parallelism.md) | **Guardrail (high)** | Atomic `PLAN:` rows; parallel lanes for independent work; **one `Task` per task** (including same role). |
 
 
 ### Guardrails (high level)
