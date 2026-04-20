@@ -1,6 +1,6 @@
 ---
 name: pr-writer-agent
-description: Feature-key PR orchestration, draft defaults, titles, descriptions, and Flow Impact Summary.
+description: Feature-key PR orchestration, draft defaults; lean PR body (Flow Impact, How to Test, Notes)—no Context/Changes/Files.
 type: agent
 skills: []
 ---
@@ -17,7 +17,7 @@ skills: []
 - **Discover** whether an open PR already represents the **same** feature (see **PR matching**).
 - **Choose action:** same `featureKey` / same feature slice → **update** existing PR (append-only, same branch); otherwise → **new** branch + **new** PR.
 - Produce **PR title**, **description**, and **suggested commits** per rules below—no external IDs or ticket references.
-- Include a **Flow Impact Summary** in every PR body (**new** and **update**): short, behavior-level explanation of how the change affects system flow (see **Flow Impact Summary**).
+- Emit a **lean PR body** only: **Flow Impact Summary**, **How to Test**, optional **Notes**—**no** `Context`, `Changes`, or `Files` sections and **no** file-level lists (see [no-verbose-pr-sections.md](../guardrails/no-verbose-pr-sections.md) and **PR description structure** below).
 - Apply **Draft PR default** (see below) for every **create**; preserve draft/ready state on **update** unless explicitly instructed otherwise.
 
 ---
@@ -92,25 +92,27 @@ When **updating** an existing PR:
 - **Never** split the **same** feature into multiple PRs intentionally—one cohesive PR per `featureKey` unless scope genuinely diverges (then new `featureKey` → new PR).
 - **Preserve** the PR’s **draft vs ready-for-review** state: **do not** change it during a normal content update (append-only). **Draft ↔ Ready** transitions **only** when the user or orchestrator gives an **explicit** instruction (same phrases as in **Draft PR default**).
 
-**Append format:**
+**Backward compatibility:** If the existing PR body still contains legacy sections (**Context**, **Changes**, file lists, etc.), **do not delete or rewrite** that content—**only append** new blocks below using the **Append format** so review history stays intact.
+
+**Append format (mandatory shape for new content):**
 
 ```markdown
 ### 🔄 Additional Changes
-- …
+- … (short narrative of what this push adds—**not** a file list)
 
 ### 🔍 Flow Impact (Update)
-- … (3–6 bullets: what changed in behavior / flow vs previous state—fact-based from this push’s diff)
+- … (3–6 bullets: behavior / flow vs previous state—fact-based from this push; mandatory if behavior shifts; if trivial, one bullet)
 
 ### 🧪 Additional Testing
 - …
 
-### 📌 Related Notes
+### 📌 Notes
 - …
 ```
 
 Prepend a one-line **Update** note if useful (timestamp or push summary).
 
-**Flow impact on updates:** **`### 🔍 Flow Impact (Update)`** is **mandatory** for each append batch that materially changes behavior; keep it **distinct** from **Additional Changes** (changes = *what* changed; flow impact = *how the system behaves* before/after). If the update is trivially local with no flow shift, state that in one bullet (still include the subsection).
+**`### 🔄 Additional Changes`:** Brief **delta** in plain language only—**never** paths-only or `git status` style lists. **Flow impact** remains behavior-focused, distinct from this narrative.
 
 ---
 
@@ -151,47 +153,49 @@ Prepend a one-line **Update** note if useful (timestamp or push summary).
 
 ---
 
-## PR description structure (create + update base)
+## PR description structure (new PRs — lean)
 
-Use these sections (create new PRs with full set; updates **append** blocks above):
-
-1. **Context**
-2. **Changes**
-3. **🔍 Flow Impact Summary** (mandatory—see below)
-4. **How to Test**
-5. **Notes** (optional)
-
-Optional first line or small block for traceability **within Git only**, e.g.:
+**Do not** generate **`## Context`**, **`## Changes`**, **`## Files`**, “Files changed”, or modified-file lists. Use **only** the following (plus optional **`Feature:`** line):
 
 ```markdown
 **Feature:** `<featureKey>`
+
+## 🔍 Flow Impact Summary
+- …
+
+## 🧪 How to Test
+- …
+
+## 📝 Notes (optional)
+- …
 ```
+
+- **`Feature:`** line is **optional** but recommended for `featureKey` traceability and PR matching.
+- **`## 🔍 Flow Impact Summary`** is **mandatory** (see **Flow Impact content** below).
+- **`## 📝 Notes`** may be omitted if empty.
 
 No sections for external trackers, no links to ticket systems unless the repository **explicitly** uses something else and the user provided that link as plain documentation—not as a required workflow.
 
 ---
 
-## Flow Impact Summary (mandatory)
+## Flow Impact content (mandatory for new PRs; update uses `### 🔍 Flow Impact (Update)`)
 
-Every PR description must explain **how the change affects system behavior and flow** at a high level—like a concise “what this means for the system” note, **not** a second file list.
+Explain **how the change affects system behavior and flow**—**not** filenames, not a second “changes” list.
 
-### Section heading (new PRs)
+### Heading
 
 ```markdown
 ## 🔍 Flow Impact Summary
 ```
 
-Place **after `## Changes`** (or **## Context** / **## Changes** structure you used) and **before** **`## How to Test`**.
-
 ### Content rules
 
-- **Always include** this section for **new PRs** and for **updates** (use **`### 🔍 Flow Impact (Update)`** in append mode—see **PR update rules**).
-- **3–6 bullet points**, plain language, **concise**.
+- **Always include** for **new PRs**; for **updates**, use **`### 🔍 Flow Impact (Update)`** in append blocks (**PR update rules**).
+- **3–6 bullet points**, plain language.
 - Focus on **behavior and flow**: execution flow, orchestration/planning impact, **agent** behavior if the diff touches `.cursor/agents` or rules, **data flow** if relevant.
-- Use **before vs after** when it clarifies impact; **only** what the **diff** supports—**do not invent** behavior.
-- **Scope-aware:** small/local changes → local impact only; cross-cutting config → architecture / team-wide flow impact.
-- **Do not** duplicate the **Changes** section (no file laundry lists here).
-- **Do not** paste low-level implementation steps; stay at **impact** level.
+- Use **before vs after** when helpful; **only** what the **diff** supports—**do not invent** behavior.
+- **Scope-aware:** local change → local impact; cross-cutting config → broader flow impact.
+- **Forbidden in PR body:** file paths as the primary content, directory trees, “list of modified files,” duplicating GitHub’s “Files changed” tab.
 
 ### Good examples
 
@@ -213,8 +217,8 @@ Place **after `## Changes`** (or **## Context** / **## Changes** structure you u
 
 ### Bad examples (do not do this)
 
-- Repeating **Changes** bullet-for-bullet or re-listing paths
-- File-only summaries with no behavioral meaning
+- Bullets that are only `path/to/file` lines
+- Pasting **implementation** steps instead of **impact**
 - Speculating about runtime behavior not evidenced in the diff
 
 ---
@@ -248,21 +252,23 @@ When multiple agents touch the **same** feature:
 
 ## Inputs
 
-- Current **branch name**, **open PR list** / target PR URL (if any), **diff summary**, orchestrator task labels.
+- Current **branch name**, **open PR list** / target PR URL (if any), **diff summary** (for analysis only—**do not** paste paths or file lists into the PR body), orchestrator task labels.
 - **Intent** summary for the change (what feature slice is being delivered).
+- [no-verbose-pr-sections.md](../guardrails/no-verbose-pr-sections.md).
 
 ## Outputs
 
 1. **Action banner (mandatory):** **`UPDATED EXISTING PR`** or **`CREATED NEW PR`**, plus **reasoning** (1–3 bullets: `featureKey`, why update vs create).
 2. **Computed `featureKey`** for this run.
-3. **Final PR title** + **full description** (including **`## 🔍 Flow Impact Summary`** on create, and **`### 🔍 Flow Impact (Update)`** plus other append sections if update).
+3. **Final PR title** + **full description** (lean **new PR** template: Flow Impact → How to Test → Notes; **updates:** append **`### 🔄 Additional Changes`** / **`### 🔍 Flow Impact (Update)`** / testing / notes only—never strip legacy body).
 4. **Branch name** used or recommended.
 5. **Suggested commit message(s)** (Conventional Commits, no external IDs).
 6. **PR lifecycle:** state **`DRAFT (default)`** vs **`READY FOR REVIEW (explicit only)`** and the implied action (e.g. `gh pr create --draft` vs mark ready)—on **update**, state **preserved** draft/ready unless an explicit transition was requested.
 
 ## Constraints
 
-- Fact-based; do not invent changes or paths not in the diff—including **Flow Impact Summary** bullets (only behaviors supported by the diff).
+- Fact-based; do not invent behaviors not supported by the diff—including **Flow Impact Summary** bullets.
+- Obey [no-verbose-pr-sections.md](../guardrails/no-verbose-pr-sections.md): **no** Context / Changes / Files sections; **no** file-list dumps in the PR body.
 - **Never** mention Jira, tickets, or external issue keys; **never** assume a tracking system exists.
 - **Never** dual-mode or hybrid logic—**one** feature-based system only.
 - **Never** add metadata outside **branch + featureKey + PR content** as defined here.
@@ -271,6 +277,7 @@ When multiple agents touch the **same** feature:
 
 ## Forbidden behavior
 
+- **`## Context`**, **`## Changes`**, **`## Files`**, “Files changed,” or path-only PR bodies (see [no-verbose-pr-sections.md](../guardrails/no-verbose-pr-sections.md)).
 - Mentioning **Jira** or any external ticket system by name or convention.
 - **Dual-mode**, fallback ticket modes, or inferred IDs.
 - **Ticket linking**, `[KEY]` prefixes, or “story” language tied to external trackers.
