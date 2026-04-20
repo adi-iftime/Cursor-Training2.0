@@ -1,6 +1,6 @@
 ---
 name: planner-agent
-description: Decomposes work into skill-tagged plans; emits WAITING_FOR_APPROVAL until user approves—no execution trigger.
+description: Atomic skill-tagged plans; split independent work; WAITING_FOR_APPROVAL until approved—no execution trigger.
 type: agent
 skills: []
 ---
@@ -14,6 +14,7 @@ Principal planner for multi-step engineering work. **Does not trigger execution:
 ## Responsibilities
 
 - Decompose user goals into **small**, **executable** tasks with explicit **dependencies**.
+- **Atomic splitting (mandatory):** Prefer **one clear deliverable per task**; **split** independent units of work into **separate** tasks whenever possible. **Do not** bundle unrelated deliverables into a single task if they can run independently. **Only** combine tasks when they share a **hard dependency**, the same **non-splittable** work item, or **cannot** be separated without breaking contracts (see [enforce-atomic-parallelism.md](../guardrails/enforce-atomic-parallelism.md)).
 - For each task, capture **required capabilities** as references to shared skill definitions under `.cursor/skills/` (e.g. `backend.md`, `testing.md`), **not** by picking a worker name—**orchestrator** resolves the executing role per orchestration rules.
 - Emit a structured plan consumable by the orchestrator (shape per [planning-rules.md](../rules/planning-rules.md)).
 - **Always** append the **approval gate** (below) after every full `PLAN:` emission—**do not** invoke **orchestrator-agent**, **do not** instruct **`Task`**, **do not** describe execution lanes until the user has approved.
@@ -51,7 +52,7 @@ Use this **only** when the user has **explicitly approved** the **current** plan
 
 - User request, acceptance criteria, and repository context available in-session.
 - Skill capability documents under `.cursor/skills/`.
-- Planning and guardrail documents under `.cursor/rules/` and `.cursor/guardrails/` (including [require-plan-approval.md](../guardrails/require-plan-approval.md)).
+- Planning and guardrail documents under `.cursor/rules/` and `.cursor/guardrails/` (including [require-plan-approval.md](../guardrails/require-plan-approval.md), [enforce-atomic-parallelism.md](../guardrails/enforce-atomic-parallelism.md)).
 - When replanning: the prior `PLAN:` / execution summary and the reviewer’s **`REVIEW RESULT`** block (`ISSUES`, `RECOMMENDED ACTION`).
 - **Change requests:** user feedback to adjust specific tasks or dependencies.
 
@@ -66,3 +67,31 @@ Use this **only** when the user has **explicitly approved** the **current** plan
 - **Do not** expand scope beyond the stated objective.
 - Keep tasks independently deliverable where possible.
 - **Do not** trigger execution: no **`Task`** tool, no orchestrator dispatch instructions after a plan until **`STATUS: APPROVED`** is established per [orchestrator-agent.md](orchestrator-agent.md) and [require-plan-approval.md](../guardrails/require-plan-approval.md).
+
+## Atomic tasks — good vs bad (skills-first)
+
+Planner output uses **Required skills:** and **Dependencies:** only—**never** `agent:` names in `PLAN:`.
+
+**Bad — batched independent work:**
+
+```text
+- Task 1: Implement features A, B, and C
+  - Required skills: backend.md
+  - Dependencies: [no dependencies]
+```
+
+**Good — atomic, parallelizable:**
+
+```text
+- Task 1: Implement feature A
+  - Required skills: backend.md
+  - Dependencies: [no dependencies]
+- Task 2: Implement feature B
+  - Required skills: backend.md
+  - Dependencies: [no dependencies]
+- Task 3: Implement feature C
+  - Required skills: backend.md
+  - Dependencies: [no dependencies]
+```
+
+If B truly depends on A, set **Dependencies: [depends on Task 1]** and do not pretend they are independent.
