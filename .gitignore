@@ -5,8 +5,9 @@ __pycache__/
 venv/
 node_modules/
 dist/
-data/fitness.db
-ml/*.pkl
-ml/*.json
-analytics/kpi_export.json
+# Reference app (examples/orchestration-demo)
+examples/orchestration-demo/data/fitness.db
+examples/orchestration-demo/ml/*.pkl
+examples/orchestration-demo/ml/*.json
+examples/orchestration-demo/analytics/kpi_export.json
 .DS_Store
