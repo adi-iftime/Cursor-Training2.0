@@ -26,9 +26,9 @@ This repository uses a **modular, configuration-first** playbook. **Agents** des
 
 **Execution flow:** **Planner** → **wait for approval** → **Orchestrator** → **workers** (via `Task`).
 
-1. **planner-agent** emits a `**PLAN:`** (skills + dependencies per [planning-rules.md](.cursor/rules/planning-rules.md)), then `**STATUS: WAITING_FOR_APPROVAL`** and `**INSTRUCTION:**` for next steps ([planner-agent.md](.cursor/agents/planner-agent.md)).
+1. **planner-agent** emits a `**PLAN:`** (skills + dependencies per [planning-rules.md](.cursor/rules/planning-rules.md)), then `**STATUS: WAITING_FOR_APPROVAL`** and `**INSTRUCTION:`** for next steps ([planner-agent.md](.cursor/agents/planner-agent.md)).
 2. The user may:
-  - **Approve** — explicit intent (e.g. approve / go ahead / run / proceed / lgtm). Then **orchestrator-agent** may build `**PARALLEL:`** / `**SEQUENTIAL:`** and dispatch `**Task**`.
+  - **Approve** — explicit intent (e.g. approve / go ahead / run / proceed / lgtm). Then **orchestrator-agent** may build `**PARALLEL:`** / `**SEQUENTIAL:`** and dispatch `**Task`**.
   - **Request changes** — describe edits; **planner-agent** updates only what is asked, re-emits the **full** revised `PLAN:`, returns to `**WAITING_FOR_APPROVAL`**. **No execution** until a new approval.
   - **Reject** — **planner-agent** produces a **new plan from scratch**, then `**WAITING_FOR_APPROVAL`** again.
 
@@ -53,7 +53,7 @@ The orchestrator resolves **skills → agent role** per task. If multiple tasks 
 - **Never** reuse a **single** subagent run to implement several independent planned tasks at once.
 - **Never** batch independent deliverables into one task in the `PLAN:` just to avoid multiple `Task` calls.
 
-**Example:** Three backend tasks A, B, C with no mutual dependencies → `**PARALLEL:`** with three lines, each `**Assigned agent: backend-developer`**, each a distinct `**Task**` (three parallel subagents). See [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md).
+**Example:** Three backend tasks A, B, C with no mutual dependencies → `**PARALLEL:`** with three lines, each `**Assigned agent: backend-developer`**, each a distinct `**Task`** (three parallel subagents). See [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md).
 
 **Exceptions:** True dependencies, shared file/module exclusivity, and **mandatory phase order** (e.g. security gate before QA) still force **sequential** edges—see [orchestration-rules.md](.cursor/rules/orchestration-rules.md).
 
@@ -67,7 +67,7 @@ All subagents are invoked by the controller via Cursor’s `**Task` tool** (see 
 | Agent                  | File                                                          | Role (summary)                                                                                                                                                                        |
 | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **planner-agent**      | [planner-agent.md](.cursor/agents/planner-agent.md)           | `**PLAN:`** with **atomic** tasks + `**WAITING_FOR_APPROVAL`**; skills only (no worker names); splits independent work.                                                               |
-| **orchestrator-agent** | [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md) | After approval: `**PARALLEL:`** / `**SEQUENTIAL:`**, `**Assigned agent:**`; **one `Task` per task** (parallel same-role OK); **blocks `Task`** until approved.                        |
+| **orchestrator-agent** | [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md) | After approval: `**PARALLEL:`** / `**SEQUENTIAL:`**, `**Assigned agent:`**; **one `Task` per task** (parallel same-role OK); **blocks `Task`** until approved.                        |
 | **backend-developer**  | [backend-developer.md](.cursor/agents/backend-developer.md)   | Backend implementation worker.                                                                                                                                                        |
 | **frontend-developer** | [frontend-developer.md](.cursor/agents/frontend-developer.md) | Frontend implementation worker.                                                                                                                                                       |
 | **data-engineer**      | [data-engineer.md](.cursor/agents/data-engineer.md)           | Data pipelines / warehouse / engineering surfaces.                                                                                                                                    |
@@ -89,7 +89,7 @@ The **mandatory relative order** for any feature slice that includes **implement
 
 1. **Planner** — Emit `**PLAN:`** with **required skills** (`.cursor/skills/*.md` references) and **dependencies** only ([planning-rules.md](.cursor/rules/planning-rules.md)); append `**STATUS: WAITING_FOR_APPROVAL`** until the user approves ([planner-agent.md](.cursor/agents/planner-agent.md)).
 2. **User approval** — Explicit approve / go ahead / run / proceed (or recorded `**STATUS: APPROVED`**).
-3. **Orchestrator** — Add `**Assigned agent:`** per task; group into `**PARALLEL:`** / `**SEQUENTIAL:**`; enforce **data / ML / BI / security isolation** (split mixed-domain work). **Blocked** if approval is missing ([orchestrator-agent.md](.cursor/agents/orchestrator-agent.md)).
+3. **Orchestrator** — Add `**Assigned agent:`** per task; group into `**PARALLEL:`** / `**SEQUENTIAL:`**; enforce **data / ML / BI / security isolation** (split mixed-domain work). **Blocked** if approval is missing ([orchestrator-agent.md](.cursor/agents/orchestrator-agent.md)).
 4. **Implementation workers** — Run tasks that implement the slice (parallel when dependencies allow).
 5. **security-engineer** — **Mandatory** security gate **before QA**; output **CLEAR** or **BLOCKED**.
 6. **qa-engineer** — Runs **only after** security **CLEAR** for the same slice.
@@ -128,7 +128,7 @@ Details: [orchestration-rules.md](.cursor/rules/orchestration-rules.md) (Cases A
 
 |                  | **planner-agent**                                                         | **orchestrator-agent**                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Outputs**      | `**PLAN:`** — tasks, **Required skills:** module refs, **Dependencies:**  | `**EXECUTION:`** — `**PARALLEL:`** / `**SEQUENTIAL:`**, `**Assigned agent:**` per task                                   |
+| **Outputs**      | `**PLAN:`** — tasks, **Required skills:** module refs, **Dependencies:**  | `**EXECUTION:`** — `**PARALLEL:`** / `**SEQUENTIAL:`**, `**Assigned agent:`** per task                                   |
 | **Worker names** | **Must not** appear in planner output                                     | **Adds** executing agent per [orchestration-rules.md](.cursor/rules/orchestration-rules.md)                              |
 | **Repairs**      | New `**PLAN:`** on `**MAJOR ISSUES`** (replan) + approval gate            | **Delta** plans on `**MINOR FIXES`**; preserve vs redo lists; **repair dispatch** needs explicit user auth when required |
 | **Approval**     | Ends with `**WAITING_FOR_APPROVAL`**; optional `**STATUS: APPROVED`** ack | **Must not** call `**Task`** until approval per [require-plan-approval.md](.cursor/guardrails/require-plan-approval.md)  |
@@ -190,7 +190,7 @@ From [guardrails.md](.cursor/guardrails/guardrails.md):
 
 ### Automation hooks (draft PR on push)
 
-- `**[.cursor/hooks/ensure-draft-pr.sh](.cursor/hooks/ensure-draft-pr.sh)`** runs on successful `**git push`** (via `**postToolUse`** / Shell and `**afterShellExecution**` matchers in [hooks.json](.cursor/hooks.json)).
+- `**[.cursor/hooks/ensure-draft-pr.sh](.cursor/hooks/ensure-draft-pr.sh)`** runs on successful `**git push`** (via `**postToolUse`** / Shell and `**afterShellExecution`** matchers in [hooks.json](.cursor/hooks.json)).
 - Ensures **one draft PR per branch** with `**gh`**, refreshes body from diff vs default base; needs `**gh`** auth and `**jq**`.
 - This is **script automation**, not **reviewer-agent**. It does **not** run the AI reviewer; the orchestrator should still dispatch **reviewer-agent** with PR URL/metadata after the PR exists.
 
