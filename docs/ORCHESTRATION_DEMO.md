@@ -1,6 +1,6 @@
-# Orchestration demo — Personal Fitness Tracker
+# Orchestration demo — reference implementation guide
 
-This document is a **reference** for how the [AGENTS.md](../AGENTS.md) multi-agent workflow maps onto this repository. It records a canonical **PLAN**, **EXECUTION**, and sample **gate outputs** (not live chat transcripts).
+This document is a **reference** for how the [AGENTS.md](../AGENTS.md) multi-agent workflow maps onto a **sample application** shipped separately from the framework. The runnable code lives under [`examples/orchestration-demo/`](../examples/orchestration-demo/). This file records a canonical **PLAN**, **EXECUTION**, and sample **gate outputs** (not live chat transcripts).
 
 ## 1. Planner output (illustrative)
 
@@ -94,7 +94,7 @@ Notes:
 ```text
 SECURITY REVIEW (illustrative):
 - Gate: CLEAR
-- Notes: SQLite file under data/; CORS allow_origins=["*"] suitable for local demo only — tighten for production.
+- Notes: SQLite file under examples/orchestration-demo/data/; CORS allow_origins=["*"] suitable for local demo only — tighten for production.
 - Recommendations: Restrict CORS; add auth if exposing beyond localhost.
 ```
 
@@ -102,7 +102,7 @@ SECURITY REVIEW (illustrative):
 
 ```text
 QA VERIFICATION (illustrative):
-- pytest tests/: PASS
+- From examples/orchestration-demo: pytest tests/: PASS
 - Manual: API /docs smoke, UI loads with proxy
 - Gate: CLEAR for merge to feature branch
 ```
@@ -112,15 +112,15 @@ QA VERIFICATION (illustrative):
 Template:
 
 ```markdown
-**Feature:** `fitness-tracker-demo`
+**Feature:** `orchestration-demo`
 
 ## 🔍 Flow Impact Summary
-- Adds a full-stack fitness reference app with parallel-friendly module boundaries
+- Adds a full-stack reference app (workouts/metrics) with parallel-friendly module boundaries under examples/orchestration-demo
 - API serves workouts and metrics; pipeline ingests CSV, builds dims, rolls up daily stats
 - UI consumes API via Vite proxy
 
 ## 🧪 How to Test
-- Backend: see root README
+- See repository root README → “Run the example” (examples/orchestration-demo)
 - Frontend: npm run dev with API running
 
 ## 📝 Notes
@@ -142,7 +142,9 @@ RECOMMENDED ACTION:
 
 (GitHub PR comment would mirror the lean template per [reviewer-agent](../.cursor/agents/reviewer-agent.md).)
 
-## 7. Repo layout (implemented)
+## 7. Reference app layout (implemented)
+
+All paths are relative to **`examples/orchestration-demo/`**:
 
 - `backend/` — FastAPI app, routers, models
 - `frontend/` — React + Vite
@@ -150,3 +152,4 @@ RECOMMENDED ACTION:
 - `ml/` — simple sklearn export
 - `analytics/` — KPI export script
 - `tests/` — pytest + in-memory SQLite
+- `pytest.ini` — pytest config for this example only

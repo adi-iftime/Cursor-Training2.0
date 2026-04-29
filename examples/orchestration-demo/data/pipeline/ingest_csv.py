@@ -4,8 +4,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-# Run from repo root: python -m data.pipeline.ingest_csv
-# Or: cd repo && PYTHONPATH=backend python data/pipeline/ingest_csv.py
+# Run from examples/orchestration-demo: PYTHONPATH=backend python data/pipeline/ingest_csv.py
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
