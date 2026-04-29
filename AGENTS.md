@@ -7,13 +7,13 @@ This repository uses a **modular, configuration-first** playbook. **Agents** des
 ## Configuration layout
 
 
-| Layer          | Location                                                                   | Purpose                                                                                                                                     |
-| -------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agents**     | [.cursor/agents/](.cursor/agents/)                                         | Role behavior: responsibilities, I/O, constraints (**no embedded skill→worker maps**).                                                      |
-| **Skills**     | [.cursor/skills/](.cursor/skills/)                                         | Reusable capability modules (technologies, patterns, practices).                                                                            |
-| **Rules**      | [.cursor/rules/](.cursor/rules/)                                           | Planning, orchestration, execution policy. **Always-on Cursor rule:** [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc). |
+| Layer          | Location                                                                   | Purpose                                                                                                                                                                                                                                                                                                            |
+| -------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Agents**     | [.cursor/agents/](.cursor/agents/)                                         | Role behavior: responsibilities, I/O, constraints (**no embedded skill→worker maps**).                                                                                                                                                                                                                             |
+| **Skills**     | [.cursor/skills/](.cursor/skills/)                                         | Reusable capability modules (technologies, patterns, practices).                                                                                                                                                                                                                                                   |
+| **Rules**      | [.cursor/rules/](.cursor/rules/)                                           | Planning, orchestration, execution policy. **Always-on Cursor rule:** [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc).                                                                                                                                                                        |
 | **Guardrails** | [.cursor/guardrails/](.cursor/guardrails/)                                 | Cross-cutting safety and quality limits. **[require-plan-approval](.cursor/guardrails/require-plan-approval.md)** (critical): no `Task` until plan is approved. **[enforce-atomic-parallelism](.cursor/guardrails/enforce-atomic-parallelism.md)** (high): atomic tasks + parallel dispatch (one `Task` per task). |
-| **Hooks**      | [.cursor/hooks.json](.cursor/hooks.json), [.cursor/hooks/](.cursor/hooks/) | Cursor **command hooks** (e.g. shell after `git push`)—**not** AI agents; they run scripts only.                                            |
+| **Hooks**      | [.cursor/hooks.json](.cursor/hooks.json), [.cursor/hooks/](.cursor/hooks/) | Cursor **command hooks** (e.g. shell after `git push`)—**not** AI agents; they run scripts only.                                                                                                                                                                                                                   |
 
 
 **Routing:** The planner declares **required skill modules** per task; the **orchestrator** assigns **executing agents** using [orchestration-rules.md](.cursor/rules/orchestration-rules.md) (single place for skill→role defaults and isolation rules).
@@ -26,24 +26,24 @@ This repository uses a **modular, configuration-first** playbook. **Agents** des
 
 **Execution flow:** **Planner** → **wait for approval** → **Orchestrator** → **workers** (via `Task`).
 
-1. **planner-agent** emits a **`PLAN:`** (skills + dependencies per [planning-rules.md](.cursor/rules/planning-rules.md)), then **`STATUS: WAITING_FOR_APPROVAL`** and **`INSTRUCTION:`** for next steps ([planner-agent.md](.cursor/agents/planner-agent.md)).
+1. **planner-agent** emits a `**PLAN:`** (skills + dependencies per [planning-rules.md](.cursor/rules/planning-rules.md)), then `**STATUS: WAITING_FOR_APPROVAL`** and `**INSTRUCTION:**` for next steps ([planner-agent.md](.cursor/agents/planner-agent.md)).
 2. The user may:
-   - **Approve** — explicit intent (e.g. approve / go ahead / run / proceed / lgtm). Then **orchestrator-agent** may build **`PARALLEL:`** / **`SEQUENTIAL:`** and dispatch **`Task`**.
-   - **Request changes** — describe edits; **planner-agent** updates only what is asked, re-emits the **full** revised `PLAN:`, returns to **`WAITING_FOR_APPROVAL`**. **No execution** until a new approval.
-   - **Reject** — **planner-agent** produces a **new plan from scratch**, then **`WAITING_FOR_APPROVAL`** again.
+  - **Approve** — explicit intent (e.g. approve / go ahead / run / proceed / lgtm). Then **orchestrator-agent** may build `**PARALLEL:`** / `**SEQUENTIAL:`** and dispatch `**Task**`.
+  - **Request changes** — describe edits; **planner-agent** updates only what is asked, re-emits the **full** revised `PLAN:`, returns to `**WAITING_FOR_APPROVAL`**. **No execution** until a new approval.
+  - **Reject** — **planner-agent** produces a **new plan from scratch**, then `**WAITING_FOR_APPROVAL`** again.
 
 **Rules:**
 
-- **No execution without approval** — [require-plan-approval.md](.cursor/guardrails/require-plan-approval.md) blocks **`Task`** if `STATUS: WAITING_FOR_APPROVAL` is active without explicit approval, or if the user asked for plan changes but has not re-approved ([orchestrator-agent.md](.cursor/agents/orchestrator-agent.md)).
+- **No execution without approval** — [require-plan-approval.md](.cursor/guardrails/require-plan-approval.md) blocks `**Task`** if `STATUS: WAITING_FOR_APPROVAL` is active without explicit approval, or if the user asked for plan changes but has not re-approved ([orchestrator-agent.md](.cursor/agents/orchestrator-agent.md)).
 - **Iterative refinement** of the plan is allowed and expected before any parallel worker runs.
-- **Post-review repair** batches also require **explicit user authorization** to run the next **`Task`** wave unless the session clearly already approved that work (see orchestrator-agent).
+- **Post-review repair** batches also require **explicit user authorization** to run the next `**Task`** wave unless the session clearly already approved that work (see orchestrator-agent).
 
 ---
 
 ## Atomic task execution
 
 - Tasks must be split into the **smallest independent units** that still make sense to implement and review ([planner-agent.md](.cursor/agents/planner-agent.md), [enforce-atomic-parallelism.md](.cursor/guardrails/enforce-atomic-parallelism.md)).
-- **Independent** tasks (no dependency edges between them, no conflicting mutable ownership) **must** be scheduled in **`PARALLEL:`** and executed in parallel when tooling allows—not serialized “to be safe.”
+- **Independent** tasks (no dependency edges between them, no conflicting mutable ownership) **must** be scheduled in `**PARALLEL:`** and executed in parallel when tooling allows—not serialized “to be safe.”
 
 ### Same-agent parallelism
 
@@ -53,7 +53,7 @@ The orchestrator resolves **skills → agent role** per task. If multiple tasks 
 - **Never** reuse a **single** subagent run to implement several independent planned tasks at once.
 - **Never** batch independent deliverables into one task in the `PLAN:` just to avoid multiple `Task` calls.
 
-**Example:** Three backend tasks A, B, C with no mutual dependencies → **`PARALLEL:`** with three lines, each **`Assigned agent: backend-developer`**, each a distinct **`Task`** (three parallel subagents). See [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md).
+**Example:** Three backend tasks A, B, C with no mutual dependencies → `**PARALLEL:`** with three lines, each `**Assigned agent: backend-developer`**, each a distinct `**Task**` (three parallel subagents). See [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md).
 
 **Exceptions:** True dependencies, shared file/module exclusivity, and **mandatory phase order** (e.g. security gate before QA) still force **sequential** edges—see [orchestration-rules.md](.cursor/rules/orchestration-rules.md).
 
@@ -66,8 +66,8 @@ All subagents are invoked by the controller via Cursor’s `**Task` tool** (see 
 
 | Agent                  | File                                                          | Role (summary)                                                                                                                                                                        |
 | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **planner-agent**      | [planner-agent.md](.cursor/agents/planner-agent.md)           | **`PLAN:`** with **atomic** tasks + **`WAITING_FOR_APPROVAL`**; skills only (no worker names); splits independent work. |
-| **orchestrator-agent** | [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md) | After approval: **`PARALLEL:`** / **`SEQUENTIAL:`**, **`Assigned agent:`**; **one `Task` per task** (parallel same-role OK); **blocks `Task`** until approved. |
+| **planner-agent**      | [planner-agent.md](.cursor/agents/planner-agent.md)           | `**PLAN:`** with **atomic** tasks + `**WAITING_FOR_APPROVAL`**; skills only (no worker names); splits independent work.                                                               |
+| **orchestrator-agent** | [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md) | After approval: `**PARALLEL:`** / `**SEQUENTIAL:`**, `**Assigned agent:**`; **one `Task` per task** (parallel same-role OK); **blocks `Task`** until approved.                        |
 | **backend-developer**  | [backend-developer.md](.cursor/agents/backend-developer.md)   | Backend implementation worker.                                                                                                                                                        |
 | **frontend-developer** | [frontend-developer.md](.cursor/agents/frontend-developer.md) | Frontend implementation worker.                                                                                                                                                       |
 | **data-engineer**      | [data-engineer.md](.cursor/agents/data-engineer.md)           | Data pipelines / warehouse / engineering surfaces.                                                                                                                                    |
@@ -87,9 +87,9 @@ All subagents are invoked by the controller via Cursor’s `**Task` tool** (see 
 
 The **mandatory relative order** for any feature slice that includes **implementation work** (backend, frontend, or data implementation deliverables) is defined in [orchestration-rules.md](.cursor/rules/orchestration-rules.md). **Before step 3**, the **human approval gate** above must pass ([require-plan-approval.md](.cursor/guardrails/require-plan-approval.md)).
 
-1. **Planner** — Emit **`PLAN:`** with **required skills** (`.cursor/skills/*.md` references) and **dependencies** only ([planning-rules.md](.cursor/rules/planning-rules.md)); append **`STATUS: WAITING_FOR_APPROVAL`** until the user approves ([planner-agent.md](.cursor/agents/planner-agent.md)).
-2. **User approval** — Explicit approve / go ahead / run / proceed (or recorded **`STATUS: APPROVED`**).
-3. **Orchestrator** — Add **`Assigned agent:`** per task; group into **`PARALLEL:`** / **`SEQUENTIAL:`**; enforce **data / ML / BI / security isolation** (split mixed-domain work). **Blocked** if approval is missing ([orchestrator-agent.md](.cursor/agents/orchestrator-agent.md)).
+1. **Planner** — Emit `**PLAN:`** with **required skills** (`.cursor/skills/*.md` references) and **dependencies** only ([planning-rules.md](.cursor/rules/planning-rules.md)); append `**STATUS: WAITING_FOR_APPROVAL`** until the user approves ([planner-agent.md](.cursor/agents/planner-agent.md)).
+2. **User approval** — Explicit approve / go ahead / run / proceed (or recorded `**STATUS: APPROVED`**).
+3. **Orchestrator** — Add `**Assigned agent:`** per task; group into `**PARALLEL:`** / `**SEQUENTIAL:**`; enforce **data / ML / BI / security isolation** (split mixed-domain work). **Blocked** if approval is missing ([orchestrator-agent.md](.cursor/agents/orchestrator-agent.md)).
 4. **Implementation workers** — Run tasks that implement the slice (parallel when dependencies allow).
 5. **security-engineer** — **Mandatory** security gate **before QA**; output **CLEAR** or **BLOCKED**.
 6. **qa-engineer** — Runs **only after** security **CLEAR** for the same slice.
@@ -126,13 +126,13 @@ Details: [orchestration-rules.md](.cursor/rules/orchestration-rules.md) (Cases A
 ## Planner vs orchestrator
 
 
-|                  | **planner-agent**                                                        | **orchestrator-agent**                                                                      |
-| ---------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| **Outputs**      | `**PLAN:`** — tasks, **Required skills:** module refs, **Dependencies:** | `**EXECUTION:`** — `**PARALLEL:**` / `**SEQUENTIAL:**`, `**Assigned agent:**` per task      |
-| **Worker names** | **Must not** appear in planner output                                    | **Adds** executing agent per [orchestration-rules.md](.cursor/rules/orchestration-rules.md) |
-| **Repairs**      | New **`PLAN:`** on **`MAJOR ISSUES`** (replan) + approval gate          | **Delta** plans on **`MINOR FIXES`**; preserve vs redo lists; **repair dispatch** needs explicit user auth when required |
-| **Approval**     | Ends with **`WAITING_FOR_APPROVAL`**; optional **`STATUS: APPROVED`** ack | **Must not** call **`Task`** until approval per [require-plan-approval.md](.cursor/guardrails/require-plan-approval.md) |
-| **Skills**       | References `.cursor/skills/*.md`                                         | Maps skill modules → default roles via **routing table** + role boundaries                  |
+|                  | **planner-agent**                                                         | **orchestrator-agent**                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Outputs**      | `**PLAN:`** — tasks, **Required skills:** module refs, **Dependencies:**  | `**EXECUTION:`** — `**PARALLEL:`** / `**SEQUENTIAL:`**, `**Assigned agent:**` per task                                   |
+| **Worker names** | **Must not** appear in planner output                                     | **Adds** executing agent per [orchestration-rules.md](.cursor/rules/orchestration-rules.md)                              |
+| **Repairs**      | New `**PLAN:`** on `**MAJOR ISSUES`** (replan) + approval gate            | **Delta** plans on `**MINOR FIXES`**; preserve vs redo lists; **repair dispatch** needs explicit user auth when required |
+| **Approval**     | Ends with `**WAITING_FOR_APPROVAL`**; optional `**STATUS: APPROVED`** ack | **Must not** call `**Task`** until approval per [require-plan-approval.md](.cursor/guardrails/require-plan-approval.md)  |
+| **Skills**       | References `.cursor/skills/*.md`                                          | Maps skill modules → default roles via **routing table** + role boundaries                                               |
 
 
 ---
@@ -151,14 +151,14 @@ Details: [orchestration-rules.md](.cursor/rules/orchestration-rules.md) (Cases A
 ### Rule documents
 
 
-| Rule                                                                 | Applies to      | Purpose                                                                                                                    |
-| -------------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [planning-rules.md](.cursor/rules/planning-rules.md)                 | Planner         | Task shape, skills-first plans, dependencies, replanning after major review.                                               |
-| [orchestration-rules.md](.cursor/rules/orchestration-rules.md)       | Orchestrator    | Parallelism, routing, **security-before-QA**, PR writer/reviewer ordering, repair Cases A/B.                               |
-| [execution-rules.md](.cursor/rules/execution-rules.md)               | Workers         | Single-task scope, file ownership, validation, repair-pass behavior.                                                       |
-| [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc) | **AlwaysApply** | Short non-negotiables (plan skills-only, security before QA, reviewer posts to GitHub, one Task per dispatch, repair cap). |
-| [require-plan-approval.md](.cursor/guardrails/require-plan-approval.md) | **Guardrail (critical)** | Blocks **`Task`** until user approves plan (or authorized repair batch). |
-| [enforce-atomic-parallelism.md](.cursor/guardrails/enforce-atomic-parallelism.md) | **Guardrail (high)** | Atomic `PLAN:` rows; parallel lanes for independent work; **one `Task` per task** (including same role). |
+| Rule                                                                              | Applies to               | Purpose                                                                                                                    |
+| --------------------------------------------------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| [planning-rules.md](.cursor/rules/planning-rules.md)                              | Planner                  | Task shape, skills-first plans, dependencies, replanning after major review.                                               |
+| [orchestration-rules.md](.cursor/rules/orchestration-rules.md)                    | Orchestrator             | Parallelism, routing, **security-before-QA**, PR writer/reviewer ordering, repair Cases A/B.                               |
+| [execution-rules.md](.cursor/rules/execution-rules.md)                            | Workers                  | Single-task scope, file ownership, validation, repair-pass behavior.                                                       |
+| [ai-team-orchestration.mdc](.cursor/rules/ai-team-orchestration.mdc)              | **AlwaysApply**          | Short non-negotiables (plan skills-only, security before QA, reviewer posts to GitHub, one Task per dispatch, repair cap). |
+| [require-plan-approval.md](.cursor/guardrails/require-plan-approval.md)           | **Guardrail (critical)** | Blocks `**Task`** until user approves plan (or authorized repair batch).                                                   |
+| [enforce-atomic-parallelism.md](.cursor/guardrails/enforce-atomic-parallelism.md) | **Guardrail (high)**     | Atomic `PLAN:` rows; parallel lanes for independent work; **one `Task` per task** (including same role).                   |
 
 
 ### Guardrails (high level)
@@ -185,13 +185,13 @@ From [guardrails.md](.cursor/guardrails/guardrails.md):
 
 ### reviewer-agent (quality gate + GitHub visibility)
 
-- Emits structured `**REVIEW RESULT:`** (`APPROVED` | `MINOR FIXES` | `MAJOR ISSUES`) plus `**ISSUES**` and `**RECOMMENDED ACTION**` for the orchestrator.
+- Emits structured `**REVIEW RESULT:`** (`APPROVED` | `MINOR FIXES` | `MAJOR ISSUES`) plus `**ISSUES`** and `**RECOMMENDED ACTION`** for the orchestrator.
 - **Must post** a public summary to the **GitHub PR** (`gh pr comment` or API) when a PR is in scope—not chat-only. Does **not** edit PR title/body (that is **pr-writer-agent**).
 
 ### Automation hooks (draft PR on push)
 
-- `**[.cursor/hooks/ensure-draft-pr.sh](.cursor/hooks/ensure-draft-pr.sh)`** runs on successful `**git push**` (via `**postToolUse**` / Shell and `**afterShellExecution**` matchers in [hooks.json](.cursor/hooks.json)).
-- Ensures **one draft PR per branch** with `**gh`**, refreshes body from diff vs default base; needs `**gh**` auth and `**jq**`.
+- `**[.cursor/hooks/ensure-draft-pr.sh](.cursor/hooks/ensure-draft-pr.sh)`** runs on successful `**git push`** (via `**postToolUse`** / Shell and `**afterShellExecution**` matchers in [hooks.json](.cursor/hooks.json)).
+- Ensures **one draft PR per branch** with `**gh`**, refreshes body from diff vs default base; needs `**gh`** auth and `**jq**`.
 - This is **script automation**, not **reviewer-agent**. It does **not** run the AI reviewer; the orchestrator should still dispatch **reviewer-agent** with PR URL/metadata after the PR exists.
 
 ---
@@ -208,9 +208,9 @@ For small, single-file requests, you may shorten ceremony but must still honor *
 
 ## Workflow checklist (numbered path)
 
-1. **Planning** — [planning-rules.md](.cursor/rules/planning-rules.md), [planner-agent.md](.cursor/agents/planner-agent.md): **`PLAN:`** with **required skills** and dependencies + **`WAITING_FOR_APPROVAL`**.
+1. **Planning** — [planning-rules.md](.cursor/rules/planning-rules.md), [planner-agent.md](.cursor/agents/planner-agent.md): `**PLAN:`** with **required skills** and dependencies + `**WAITING_FOR_APPROVAL`**.
 2. **Approval** — User explicitly approves (or requests changes → back to planner; reject → new plan). See [require-plan-approval.md](.cursor/guardrails/require-plan-approval.md).
-3. **Orchestration** — [orchestration-rules.md](.cursor/rules/orchestration-rules.md), [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md): **`Assigned agent:`**, **`PARALLEL:`** / **`SEQUENTIAL:`**, isolation rules—**only if approved**.
+3. **Orchestration** — [orchestration-rules.md](.cursor/rules/orchestration-rules.md), [orchestrator-agent.md](.cursor/agents/orchestrator-agent.md): `**Assigned agent:`**, `**PARALLEL:`** / `**SEQUENTIAL:**`, isolation rules—**only if approved**.
 4. **Implementation workers** — Per task; [execution-rules.md](.cursor/rules/execution-rules.md).
 5. **Security gate** — [security-engineer.md](.cursor/agents/security-engineer.md); **BLOCKED** stops QA until fixed and re-gated.
 6. **QA** — [qa-engineer.md](.cursor/agents/qa-engineer.md) only after **CLEAR**.
